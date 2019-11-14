@@ -309,19 +309,6 @@ void checkAIRMINUS (void) {
 		}
 }
 
-void ADC_init(void) {
-    /* Get the Analog to Digital Converter started (ADC)
-     * Set ADC Enable, and set AD Prescaler to 0x101
-     * Divides clock frequency by 32 for AD clock */
-    ADCSRA |= _BV(ADEN) | _BV(ADPS2) | _BV(ADPS0);
-
-    //Enable interal reference voltage
-    ADCSRB &= _BV(AREFEN);
-
-    //Set internal reference voltage as AVcc
-    ADMUX |= _BV(REFS0);
-}
-
 void conditionalMessageSet (uint8_t reg, uint8_t bit, uint8_t msg[], uint8_t index, uint8_t condHigh, uint8_t condLow) {
 		if(bit_is_set(reg,bit)){
 		 msg[index] = condHigh;
@@ -359,7 +346,6 @@ int main (void) {
 		initTimer1();
     sei(); //Inititiates interrupts for the ATMega
     CAN_init(CAN_ENABLED);
-		ADC_init();
 		LOG_init();
 		CAN_wait_on_receive(MOB_BRAKELIGHT, CAN_ID_BRAKE_LIGHT, CAN_LEN_BRAKE_LIGHT, CAN_MSK_SINGLE);
 
@@ -373,7 +359,7 @@ int main (void) {
 
 		readAllInputs(); // in case they are set high before micro starts up and therefore won't trigger an interrupt
 
-		uint8_t charging = adcReadCoolingPin(); //
+	 // add a way to tell if car is charging or not
 		uint8_t chargingStartupComplete = 0;
 
 		while(charging) {
