@@ -17,6 +17,7 @@
 /*----- Outputs -----*/
 #define LED1				PC4
 #define LED2				PC5
+#define LED3        PD7
 #define LED_PORT	PORTC
 
 #define RJ45_LED1				PB0
@@ -46,9 +47,8 @@
 #define INREG_SS_IMD			 PINC
 #define PIN_SS_BMS					PC1 // PCINT9
 #define INREG_SS_BMS			 PINC
-
-#define PIN_COOLING_PRESSURE		  	PB7 // PCINT7  ADC4
-#define INREG_COOLING_PRESSURE		 PINB
+#define PIN_SS_TSMS					PB7 // PCINT7  ADC4
+#define INREG_SS_TSMS			 PINB
 
 
 /*----- Fault Codes -----*/
@@ -72,13 +72,13 @@
 #define FLAG_IMD_STATUS     	3
 #define FLAG_BMS_STATUS     	4
 #define FLAG_TSMS_STATUS		  5
-#define FLAG_COOLING_PRESSURE	6
 
 /*----- sFlag -----*/
 #define FLAG_SS_HVD   0
 #define FLAG_SS_MP    1 // MP -> main pack connector
 #define FLAG_SS_IMD   2
 #define FLAG_SS_BMS   3
+#define FLAG_SS_TSMS  4
 
 /*----- TS Statuses -----*/
 #define TS_STATUS_DEENERGIZED 		0x00
@@ -124,6 +124,7 @@ uint8_t msgShutdownSense[6] = {0,0,0,0,0,0};
 #define MSG_INDEX_SS_IMD				3
 #define MSG_INDEX_BMS_STATUS		4
 #define MSG_INDEX_IMD_STATUS		5
+#define MSG_INDEX_SS_TSMS		    6 // might change
 
 ISR(TIMER0_COMPA_vect) {
     /*
@@ -144,8 +145,8 @@ ISR(TIMER1_OVF_vect) {
 		timer1OverflowCount++;
 }
 
-ISR(PCINT0_vect) { // PCINT0-7 -> BMS_STATUS, IMD_STATUS, SS_HVD, COOLING_PRESSURE
-    if(bit_is_set(INREG_BMS_STATUS,PIN_BMS_STATUS)){
+ISR(PCINT0_vect) { // PCINT0-7 -> BMS_STATUS, IMD_STATUS, SS_HVD, SS_TSMS
+    if(bit_is_set(INREG_BMS_STATUS,PIN_BMS_STATUS))SS{
 		 gFlag |= _BV(FLAG_BMS_STATUS);
 		} else {
 		 gFlag &= ~_BV(FLAG_BMS_STATUS);
@@ -167,10 +168,10 @@ ISR(PCINT0_vect) { // PCINT0-7 -> BMS_STATUS, IMD_STATUS, SS_HVD, COOLING_PRESSU
 		 LOG_println(hvd_bad, strlen(hvd_bad));
 		}
 
-		if(bit_is_clear(INREG_COOLING_PRESSURE,PIN_COOLING_PRESSURE)){
-		 gFlag |= _BV(FLAG_COOLING_PRESSURE);
+		if(bit_is_clear(INREG_SS_TSMS,PIN_SS_TSMS)){
+		 gFlag |= _BV(FLAG_SS_TSMS);
 		} else {
-		 gFlag &= ~_BV(FLAG_COOLING_PRESSURE);
+		 gFlag &= ~_BV(FLAG_SS_TSMS);
 		}
 }
 
@@ -321,35 +322,6 @@ void ADC_init(void) {
     ADMUX |= _BV(REFS0);
 }
 
-uint8_t adcReadCoolingPin (void) { // TODO where is this going in CAN?
-				    // not currently in CAN. we'd have to change the CAN api
-				    // and re-flash every board to do it properly. Not worth
-				    // the effort in my opinion. -Corey 5.29.19
-
-		//uncomment to disable pull-up if need be
-		//PORTB &= ~_BV(PIN_COOLING_PUMP);
-
-		ADMUX = _BV(REFS0);
-		ADMUX |= 4; //Cooling pressure pin is ADC4
-		ADCSRA |= _BV(ADSC);
-		loop_until_bit_is_clear(ADCSRA, ADSC);
-		uint16_t val = ADC;
-
-		// Uncomment when we need it. -Corey
-		// Don't forget to uncomment the .h file at the top
-		//LOG_init();
-		//char uart_buf[64];
-  	sprintf(uart_buf, "Cooling Pressure: %d", val);
-  	LOG_println(uart_buf, strlen(uart_buf));
-
-		if(val>200 && val<800){
-			return 1;
-		} else {
-			return 0;
-		}
-
-}
-
 void conditionalMessageSet (uint8_t reg, uint8_t bit, uint8_t msg[], uint8_t index, uint8_t condHigh, uint8_t condLow) {
 		if(bit_is_set(reg,bit)){
 		 msg[index] = condHigh;
@@ -365,6 +337,7 @@ void sendShutdownSenseCANMessage (void) {
 	conditionalMessageSet(sFlag, FLAG_SS_BMS, msgShutdownSense, MSG_INDEX_SS_BMS, 0xff, 0x00);
 	conditionalMessageSet(gFlag, FLAG_BMS_STATUS, msgShutdownSense, MSG_INDEX_BMS_STATUS, 0xff, 0x00);
 	conditionalMessageSet(gFlag, FLAG_IMD_STATUS, msgShutdownSense, MSG_INDEX_IMD_STATUS, 0xff, 0x00);
+  conditionalMessageSet(gFlag, FLAG_SS_TSMS, msgShutdownSense, MSG_INDEX_SS_TSMS, 0xff, 0x00);
 	CAN_transmit(MOB_BROADCAST_SS,
 								CAN_ID_AIR_CONTROL_SENSE,
 								CAN_LEN_AIR_CONTROL_SENSE,
@@ -397,10 +370,10 @@ int main (void) {
 		PCMSK2 |= _BV(PCINT16);
 
 		setOutputs();
-		PORTB |= _BV(PIN_COOLING_PRESSURE); // Set internal pull up resistor
+
 		readAllInputs(); // in case they are set high before micro starts up and therefore won't trigger an interrupt
 
-		uint8_t charging = adcReadCoolingPin();
+		uint8_t charging = adcReadCoolingPin(); //
 		uint8_t chargingStartupComplete = 0;
 
 		while(charging) {
