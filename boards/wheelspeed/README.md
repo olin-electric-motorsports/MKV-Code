@@ -10,3 +10,4 @@ As of right now, the code is written to run on a generic atmega16m1 test board. 
 
 - [ ] Send data over CAN
 - [ ] Implement software filtering for the wheel speed data (and investigate if this is necessary)
+- [x] Implement speed calculations
