@@ -14,7 +14,6 @@ import random
 import csv
 import numpy as np
 
-Builder.load_file('HomeTouch.kv')
 
 class MainScreen(Screen):
     Grid = StringProperty('Charging:\nVoltage:\nBMS:\nShutdown:\nTSAL:')
@@ -32,14 +31,6 @@ class VoltageScreen(Screen):pass
 class BMSScreen(Screen):pass
 class ShutdownNodesScreen(Screen):pass
 class TSALScreen(Screen):pass
-
-class HomeTouch(Button):
-    IPLabel = StringProperty("000.000.000.000")
-
-    def changeIP(self):
-        self.text = 'poop'
-
-
 
 
 initData = np.array([['Charging', 'Voltage', 'BMS', 'Shutdown', 'TSAL']])
