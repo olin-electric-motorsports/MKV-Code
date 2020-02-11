@@ -1,0 +1,83 @@
+#:import NoTransition kivy.uix.screenmanager.NoTransition
+MyScreenManager:
+    transition: NoTransition()
+    MainScreen:
+    ChargingScreen:
+    VoltageScreen:
+    BMSScreen:
+    ShutdownNodesScreen:
+    TSALScreen:
+
+<ChargingScreen>:
+    name: 'charging'
+    BoxLayout:
+        canvas.before:
+            Color:
+                rgba: .85, .85, .85, 1
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        orientation: 'vertical'
+        BoxLayout:
+            size_hint_y: None
+            height: self.minimum_height
+            Button:
+                pos_hint: {'top': 1}
+                text: 'MAIN OUTPUT'
+                font_size: 12
+                on_release: app.root.current = 'main'
+                size: dp(100), dp(40)
+                size_hint: None, None # <---
+            Button:
+                pos_hint: {'top': 1}
+                text: 'Charging'
+                font_size: 12
+                on_release: app.root.current = 'charging'
+                size: dp(100), dp(40)
+                size_hint: None, None # <---
+                background_color: .26, .40, .69, .85
+            Button:
+                pos_hint: {'top': 1}
+                text: 'Voltage'
+                font_size: 12
+                on_release: app.root.current = 'voltage'
+                size: dp(100), dp(40)
+                size_hint: None, None # <---
+            Button:
+                pos_hint: {'top': 1}
+                text: 'BMS'
+                font_size: 12
+                on_release: app.root.current = 'bms'
+                size: dp(100), dp(40)
+                size_hint: None, None # <---
+            Button:
+                pos_hint: {'top': 1}
+                text: 'Shutdown Nodes'
+                font_size: 12
+                on_release: app.root.current = 'nodes'
+                size: dp(100), dp(40)
+                size_hint: None, None # <---
+            Button:
+                pos_hint: {'top': 1}
+                text: 'TSAL'
+                font_size: 12
+                on_release: app.root.current = 'tsal'
+                size: dp(100), dp(40)
+                size_hint: None, None # <---
+        Label:
+            text: root.Grid
+            color: 0,0,0,1
+            font_size: 30
+            multiline:True
+            canvas.before:
+                Color:
+                    rgba: 1, 1, 1, 1
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+        Image:
+            source: '/home/tolu/Desktop/OEM-Logo.png'
+            size: dp(100), dp(50)
+            size_hint: None, None # <---
+            allow_stretch: False
+            keep_ratio: True
