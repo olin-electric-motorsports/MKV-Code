@@ -32,6 +32,7 @@
 #define CAN_ID_BRAKE_PRESSURE    ((uint16_t) 0x18)
 
 #define CAN_ID_TUTORIAL6         ((uint16_t) 0x25)
+#define CAN_ID_SHUTDOWN_SENSE    ((uint16_t) 0x26)
 
 
 /* Message Lengths */
@@ -59,6 +60,7 @@
 #define CAN_LEN_BRAKE_PRESSURE  ((uint16_t) 2)
 
 #define CAN_LEN_TUTORIAL6       ((uint16_t) 1)
+#define CAN_LEN_SHUTDOWN_SENSE   ((uint16_t) 4)
 
 /* Masks */
 #define CAN_MSK_GLOBAL            ((uint16_t) 0x00)
