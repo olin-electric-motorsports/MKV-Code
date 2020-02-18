@@ -80,7 +80,7 @@ void initTimer(void) {
 	TCCR0A = _BV(WGM01);   // Set up 8-bit timer in CTC mode
 	TCCR0B = 0x05;         // clkio/1024 prescaler
 	TIMSK0 |= _BV(OCIE0A); // Every 1024 cycles, OCR0A increments
-	OCR0A = 0x27; //dec 39  // until 0xff, 255, which then calls for
+	OCR0A = 0xFF; //dec 39  // until 0xff, 255, which then calls for
 	// the TIMER0_COMPA_vect interrupt
 	// currently running at 100Hz
 }
@@ -103,12 +103,12 @@ int main (void) {
 
 	CAN_wait_on_receive(MOB_DASH, CAN_ID_DASHBOARD, CAN_LEN_DASHBOARD, 0xFF);
 	while(1) {
-		if(1) {
+		if(bit_is_set(gFlag, UPDATE_STATUS)) {
 			gFlag &= ~_BV(UPDATE_STATUS);
 			PORTC ^= _BV(LED1);
 			PORTB ^= _BV(LED2);
 			PORTB ^= _BV(LED3);
-			_delay_ms(500);
+			// _delay_ms(500);
 
 
 			// if(bit_is_set(gFlag,FLAG_AIRPLUS_AUX)){
