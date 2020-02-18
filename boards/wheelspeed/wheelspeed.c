@@ -43,11 +43,32 @@ ISR(TIMER0_COMPA_vect) {
 	gFlag |= _BV(UPDATE_STATUS);
 }
 
+uint16_t getCANID() {
+    /**
+     * Check which board this is and set the ID based on that
+     */
+    front_set = bit_is_set(PINB, PB3);
+    left_set = bit_is_set(PINB, PB4);
+
+    if(front_set && left_set) {
+        return CAN_ID_WHEEL_SPEED_FRONT_LEFT
+    } else if (front_set && !left_set) {
+        return CAN_ID_WHEEL_SPEED_FRONT_RIGHT
+    } else if (!front_set && left_set) {
+        return CAN_ID_WHEEL_SPEED_BACK_LEFT
+    } else if (!front_set && !left_set) {
+        return CAN_ID_WHEEL_SPEED_BACK_RIGHT
+    }
+}
+
 void reportSpeed() {
+    /**
+     * Report speed over CAN
+     */
     wheel_speed_msg[0] = wheel_speed_current_count & 0x0f;
     wheel_speed_msg[1] = wheel_speed_current_count & 0xf0 >> 8;
 
-    CAN_transmit(MOB_WHEEL_SPEED_SEND, CAN_ID_WHEEL_SPEED, CAN_LEN_WHEEL_SPEED, wheel_speed_msg);
+    CAN_transmit(MOB_WHEEL_SPEED_SEND, getCANID(), CAN_LEN_WHEEL_SPEED, wheel_speed_msg);
 
     wheel_speed_current_count = 0;
 }
