@@ -36,6 +36,7 @@ Author:
 #define UPDATE_STATUS          0
 
 volatile uint8_t gTimerFlag = 0x01;
+volatile uint8_t can_recv_msg[8] = {};
 
 void initTimer(void) {
 	TCCR0A = _BV(WGM01); // Set up 8-bit timer in CTC mode
@@ -51,23 +52,12 @@ ISR(TIMER0_COMPA_vect) {
 	gTimerFlag = _BV(UPDATE_STATUS);
 }
 
-// void turnOnLED(int LED, int PORT) {
-// 	PORT |= _BV(LED);
-// }
+ISR(CAN_INT_vect) {
+	CANPAGE = (0 << MOBNB0);
+	if (bit_is_set(CANSTMOB, RXOK)) {
 
-// void initADC(void) {
-// 	//Get the Analog to Digital Converter started (ADC)
-//     ADCSRA |= _BV(ADEN) | _BV(ADPS2) | _BV(ADPS0);
-
-//     //Enable interal reference voltage
-//     ADCSRB &= _BV(AREFEN);
-
-//     //Set internal reference voltage as AVCC
-//     ADMUX |= _BV(REFS0);
-
-//     //Reads by default from ADC0 (pin 11)
-//     ADMUX |= _BV(0x00);
-// }
+	}
+}
 
 int main(void) {
 	// Set up LEDs
@@ -79,47 +69,56 @@ int main(void) {
 	initTimer();
 
 	// Pin Change Interrupt Control Register
-	// Allow pin interupts on PCIE0
-	PCICR |= _BV(PCIE0);
+	// Allow pin interupts on PCIE2
+	PCICR |= _BV(PCIE2);
 
 	// Enable interupts on PCINT22 and 23
-	PCMSK0 |= _BV(PCINT22) | _BV(PCINT23);
+	PCMSK2 |= _BV(PCINT22) | _BV(PCINT23);
 
-	// initADC();
 	CAN_init(CAN_ENABLED);
 
-	// PORTB |= _BV(BSPD) | _BV(CRASH_SENSOR) | _BV(ESTOP_DRIVER) | _BV(HVD) | _BV(CONNECTOR_2_HVD);
-	// PORTC |= _BV(BOTS) | _BV(BMS) | _BV(TSMS);
-	// PORTD |= _BV(MAIN_PACK_CONNECTOR)| _BV(IMD);
-
-	// PORTB |= _BV(CONNECTOR_2_HVD);
+	int delay = 50;
 
 	while(1) {
-		// PORTB |= _BV(CONNECTOR_2_HVD);
-		// _delay_ms(500);
-		// PORTB &= ~_BV(CONNECTOR_2_HVD);
-		// _delay_ms(500);
-
 		PORTB ^= _BV(BSPD);
-		_delay_ms(1000);
+		_delay_ms(delay);
 		PORTB ^= _BV(CRASH_SENSOR);
-		_delay_ms(1000);
+		_delay_ms(delay);
 		PORTC ^= _BV(BOTS);
-		_delay_ms(1000);
+		_delay_ms(delay);
 		PORTB ^= _BV(ESTOP_DRIVER);
-		_delay_ms(1000);
+		_delay_ms(delay);
 		PORTB ^= _BV(HVD);
-		_delay_ms(1000);
+		_delay_ms(delay);
 		PORTB ^= _BV(CONNECTOR_2_HVD);
-		_delay_ms(10000);
+		_delay_ms(delay);
 		PORTD ^= _BV(MAIN_PACK_CONNECTOR);
-		_delay_ms(1000);
+		_delay_ms(delay);
 		PORTC ^= _BV(BMS);
-		_delay_ms(1000);
+		_delay_ms(delay);
 		PORTD ^= _BV(IMD);
-		_delay_ms(1000);
+		_delay_ms(delay);
 		PORTC ^= _BV(TSMS);
-		_delay_ms(1000);
-
+		_delay_ms(delay);
+		PORTC ^= _BV(TSMS);
+		_delay_ms(delay);
+		PORTD ^= _BV(IMD);
+		_delay_ms(delay);
+		PORTC ^= _BV(BMS);
+		_delay_ms(delay);
+		PORTD ^= _BV(MAIN_PACK_CONNECTOR);
+		_delay_ms(delay);
+		PORTB ^= _BV(CONNECTOR_2_HVD);
+		_delay_ms(delay);
+		PORTB ^= _BV(HVD);
+		_delay_ms(delay);
+		PORTB ^= _BV(ESTOP_DRIVER);
+		_delay_ms(delay);
+		PORTC ^= _BV(BOTS);
+		_delay_ms(delay);
+		PORTB ^= _BV(CRASH_SENSOR);
+		_delay_ms(delay);
+		PORTB ^= _BV(BSPD);
+		_delay_ms(delay);
 	}
 }
