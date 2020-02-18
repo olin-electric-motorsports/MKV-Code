@@ -5,9 +5,9 @@ Header:
             : Interface with Dashboard Right
 
 Author:
-    Aditya Sudhakar
-    asudhakar@olin.edu
-    7133633437
+    Emily Wan
+    ewan@olin.edu
+    4254999033
 */
 
 #include <Wire.h>
@@ -16,7 +16,7 @@ Author:
 
 Adafruit_24bargraph socbar = Adafruit_24bargraph();
 Adafruit_24bargraph throttlebar = Adafruit_24bargraph();
-
+15
 int throttle;
 int SoC;
 

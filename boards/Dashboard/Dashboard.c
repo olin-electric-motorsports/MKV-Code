@@ -39,6 +39,13 @@ Author:
 #define PORT_RJ_LED1                       PORTC
 #define PORT_RJ_LED2                       PORTC
 
+#define BRAKE_LED                          PB2
+#define LV_LED                             PD6
+#define HV_LED                             PD7
+
+#define PORT_BRAKE_LED                     PORTB
+#define PORT_LV_LED                        PORTD
+#define PORT_HV_LED                        PORTD
 
 // BMS and IMD Button Lights
 #define BMS_LED                            PD0
@@ -46,8 +53,6 @@ Author:
 
 #define IMD_LED                            PB3
 #define PORT_IMD_LED                       PORTB
-
-
 
 // Start Button Status + LED
 #define START_PIN                          PC6
