@@ -4,53 +4,71 @@
 #include <string.h>
 #include <stdio.h>
 #include "log_uart.h"
+#include "can_api.h"
 
-#define TIME_COUNT_MS 100
-#define HOLES_PER_REV 1
+// gFlag
+#define UPDATE_STATUS 0
 
-uint16_t current_count = 0;
-float rpm = 0;
-char uart_report_msg[6*20+4+5] = "";
+#define MOB_WHEEL_SPEED_SEND 0
+#define CLOCK_SPEED_HZ 50
+
+volatile uint8_t gFlag = 0x00;
+uint16_t wheel_speed_current_count = 0;
+uint8_t wheel_speed_msg[2] = {0, 0};
 
 ISR(PCINT0_vect) {
     // Interrupt for pin PB4
     // Whenever PB4 is triggered, flip the LED
     // TODO: Only flip LED when PB4 is triggered, not anything
     // on PCINT0
-    PORTB ^= _BV(PB1);
-    current_count += 1;
+    PORTB ^= _BV(PB0);
+    wheel_speed_current_count += 1;
 }
 
-uint16_t get_speed(uint16_t counts) {
-    /**
-     * Calculates RPS from the counts in the last timestep
-     *
-     * Returns: RPS * 1000
-     */
-    return (uint16_t) ((double) counts / (double) HOLES_PER_REV) / ((double) TIME_COUNT_MS / 1000.0) * 1000;
+void initTimer(void) {
+	TCCR0A = _BV(WGM01);   // Set up 8-bit timer in CTC mode
+	TCCR0B = 0x05;         // clkio/1024 prescaler
+	TIMSK0 |= _BV(OCIE0A); // Every 1024 cycles, OCR0A increments
+	OCR0A = 0x4e; //dec 78  // until 0xff, 255, which then calls for
+	// the TIMER0_COMPA_vect interrupt
+	// currently running at 100Hz
 }
+
+ISR(TIMER0_COMPA_vect) {
+	/*
+	   Timer/Counter0 compare match A
+	   If the clock frequency is 4MHz then this is called 16 times per second
+	   MATH: (4MHz/1024)/255 = ~16
+	 */
+	gFlag |= _BV(UPDATE_STATUS);
+}
+
+void reportSpeed() {
+    wheel_speed_msg[0] = wheel_speed_current_count & 0x0f;
+    wheel_speed_msg[1] = wheel_speed_current_count & 0xf0 >> 8;
+
+    CAN_transmit(MOB_WHEEL_SPEED_SEND, CAN_ID_WHEEL_SPEED, CAN_LEN_WHEEL_SPEED, wheel_speed_msg);
+
+    wheel_speed_current_count = 0;
+}
+
 
 int main(void) {
     // Set LED to output
-    DDRB |= _BV(PB1);
+    DDRB |= _BV(PB0);
     
     // Enable interrupts
     sei();
     PCICR |= _BV(PCIE0);
-    PCMSK0 |= _BV(PCINT4);
+    PCMSK0 |= _BV(PCINT5);
 
     // UART logging
     LOG_init();
 
     while(1) {
-        // Report data over UART
-        sprintf(uart_report_msg, "%u count, %u rpm", current_count, get_speed(current_count));
-        LOG_println(uart_report_msg, strlen(uart_report_msg));
-
-        // Every time step clear the current count
-        current_count = 0;
-
-        _delay_ms(TIME_COUNT_MS);
+        if(bit_is_set(gFlag, UPDATE_STATUS)) {
+            reportSpeed();
+        }
     }
 }
 
