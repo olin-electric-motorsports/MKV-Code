@@ -101,7 +101,7 @@ uint8_t gDriveMode = 0;
    4 = autocross
    5 = endurance
  */
-
+char uart_buf[64];
 uint8_t gError = 0b00000000;
 /* Error definitions:
    0 = No errors
@@ -200,11 +200,11 @@ ISR(CAN_INT_vect) {
 
 		if (msg == 0xFF) {
 			gFlag |= _BV(FLAG_MOTOR_ON);
-			PLED1_PORT |= _BV(PLED1);
+			// PLED1_PORT |= _BV(PLED1);
 			PLED2_PORT ^= _BV(PLED2);
 		} else {
 			gFlag &= ~_BV(FLAG_MOTOR_ON);
-			PLED1_PORT &= ~_BV(PLED1);
+			PLED1_PORT ^= _BV(PLED1);
 		}
 
 		CANSTMOB = 0x00;
@@ -383,7 +383,7 @@ void checkPanic(void) {
 		gThrottleOut = 0;
 		// PLED1_PORT ^= _BV(PLED1);
 		// PLED2_PORT ^= _BV(PLED2);
-		PLED3_PORT ^= _BV(PLED3);
+		// PLED3_PORT ^= _BV(PLED3);
 	}
 }
 
@@ -434,6 +434,9 @@ void readPots(void) {
 
 	gThrottle1Voltage = t1;
 	gThrottle2Voltage = t2;
+	// sprintf(uart_buf, "TV: %u, %u", t1, t2);
+	// LOG_println(uart_buf, strlen(uart_buf));
+
 }
 
 void mapThrottle(void) {
@@ -526,6 +529,11 @@ void storeThrottle(void) {
 	if (gThrottleArrayIndex == ROLLING_AVG_SIZE) {
 		gThrottleArrayIndex = 0;
 	}
+
+	// sprintf(uart_buf, "NEW: %u", new);
+	// LOG_println(uart_buf, strlen(uart_buf));
+	// sprintf(uart_buf, "OLD: %u", old);
+	// LOG_println(uart_buf, strlen(uart_buf));
 }
 
 void getAverage(void) {
@@ -561,12 +569,12 @@ void testStartup(void) {
 	if (bit_is_set(gFlag, FLAG_MOTOR_ON)) {
 		// PLED1_PORT |= _BV(PLED1);
 		// PLED2_PORT |= _BV(PLED2);
-		PLED3_PORT |= _BV(PLED3);
+		// PLED3_PORT |= _BV(PLED3);
 	}
 	else {
 		// PLED1_PORT &= ~_BV(PLED1);
 		// PLED2_PORT &= ~_BV(PLED2);
-		PLED3_PORT &= ~_BV(PLED3);
+		// PLED3_PORT &= ~_BV(PLED3);
 	}
 }
 
@@ -585,16 +593,16 @@ void throttleLights(void) {
 	//  PLED2_PORT &= ~_BV(PLED2);
 	// }
 
-	if (gThrottleOut > 192) {
-		PLED3_PORT |= _BV(PLED3);
-	}
-	else {
-		PLED3_PORT &= ~_BV(PLED3);
-	}
+	// if (gThrottleOut > 192) {
+	//  PLED3_PORT |= _BV(PLED3);
+	// }
+	// else {
+	//  PLED3_PORT &= ~_BV(PLED3);
+	// }
 }
 
 void showError(void) {
-	uint8_t temp = gError;
+	// uint8_t temp = gError;
 
 	// if (temp % 2 == 1) {
 	//  PLED1_PORT |= _BV(PLED1);
@@ -612,14 +620,14 @@ void showError(void) {
 	//  PLED2_PORT &= ~_BV(PLED2);
 	// }
 
-	temp /= 2;
-
-	if (temp % 2 == 1) {
-		PLED3_PORT |= _BV(PLED3);
-	}
-	else {
-		PLED3_PORT &= ~_BV(PLED3);
-	}
+	// temp /= 2;
+	//
+	// if (temp % 2 == 1) {
+	//  PLED3_PORT |= _BV(PLED3);
+	// }
+	// else {
+	//  PLED3_PORT &= ~_BV(PLED3);
+	// }
 }
 
 //******************Send CAN Messages************
@@ -709,7 +717,7 @@ int main(void) {
 	                    CAN_LEN_PANIC,
 	                    0xFF);
 
-	PLED3_PORT |= _BV(PLED3);
+	// PLED3_PORT |= _BV(PLED3);
 
 
 	while(1) {
