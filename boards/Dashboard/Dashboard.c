@@ -122,23 +122,31 @@ uint8_t throttle = 0;   // Throttle
 
 /*----- Interrupt(s) -----*/
 // *pg 76 of datasheet*
-ISR(CAN_INT_vect) {
+ISR(CAN_INT_vect) { //pin inturpt vector
 
 	/*----- Brake Light Mailbox -----*/
-	CANPAGE = (BRAKE_LIGHT_MBOX << MOBNB0);
-	if(bit_is_set(CANSTMOB, RXOK)) {
-		can_recv_msg[0] = CANMSG;   // brake analog voltage MSB
-		can_recv_msg[1] = CANMSG;   // brake analog voltage LSB
-		can_recv_msg[2] = CANMSG;   // brake switch
-		can_recv_msg[3] = CANMSG;   // BSPD
-		can_recv_msg[4] = CANMSG;   // TSMS
-		can_recv_msg[5] = CANMSG;   // left_e_stop
-		can_recv_msg[6] = CANMSG;   // GLVMS sense
+	CANPAGE = (BRAKE_LIGHT_MBOX << MOBNB0); //1st mailbox from a certain person/board
+	if(bit_is_set(CANSTMOB, RXOK)) { //is there something in the mail box to be read
+		//different letters
+		can_recv_msg[0] = CANMSG;   // PANIC PANIC
+		can_recv_msg[1] = CANMSG;   // brake analog voltage MSB       // subjectlines of the letter, have to read the letters in order
+		can_recv_msg[2] = CANMSG;   // brake analog voltage LSB
+		can_recv_msg[3] = CANMSG;   // is brake pressed?
+		can_recv_msg[4] = CANMSG;   // BSPD
+		can_recv_msg[5] = CANMSG;   // TSMS
+		can_recv_msg[6] = CANMSG;   // left_e_stop
+		can_recv_msg[7] = CANMSG;   // GLVMS sense
 
-		if(can_recv_msg[2] == 0xFF) {
-			gFlag |= _BV(BRAKE_PRESSED);           //trip flag
+		if(can_recv_msg[2] == 0xFF) { //if the specific letter says something
+			gFlag |= _BV(BRAKE_PRESSED);           //trip flag // scribbling on your hand
 		} else {
 			gFlag &= ~_BV(BRAKE_PRESSED);
+		}
+
+		if(can_recv_msg[2] == 0xFF) { //if the specific letter says something
+			PORT_BRAKE_LED |= _BV(BRAKE_LED);           //trip flag // scribbling on your hand
+		} else {
+			PORT_BRAKE_LED &= ~_BV(BRAKE_LED);
 		}
 
 		//Setup to Receive Again
@@ -149,13 +157,14 @@ ISR(CAN_INT_vect) {
 	/*----- BMS Master Mailbox -----*/
 	CANPAGE = (BMS_CORE_MBOX << MOBNB0);
 	if(bit_is_set(CANSTMOB, RXOK)) {
-		can_recv_msg[0] = CANMSG; // Relay Status
-		can_recv_msg[1] = CANMSG; // Temperature
-		can_recv_msg[2] = CANMSG; // SoC % Estimate
-		can_recv_msg[3] = CANMSG; // BMS OK!
-		can_recv_msg[4] = CANMSG; // Regen Enabled
-		can_recv_msg[5] = CANMSG; // Current Limiting Enabled
-		can_recv_msg[6] = CANMSG; // Cell Balancing Status
+		can_recv_msg[0] = CANMSG; // PANICPANIC
+		can_recv_msg[1] = CANMSG; // Relay Status
+		can_recv_msg[2] = CANMSG; // Temperature
+		can_recv_msg[3] = CANMSG; // SoC % Estimate
+		can_recv_msg[4] = CANMSG; // BMS OK!
+		can_recv_msg[5] = CANMSG; // Regen Enabled
+		can_recv_msg[6] = CANMSG; // Current Limiting Enabled
+		can_recv_msg[7] = CANMSG; // Cell Balancing Status
 
 		OCR1B = can_recv_msg[3]; //SoC for PWM
 
@@ -197,22 +206,29 @@ ISR(CAN_INT_vect) {
 
 	CANPAGE = (AIR_CONTROL_CRITICAL_MBOX << MOBNB0); //repeat with mailbox 1 to listen for BMS and IMD
 	if(bit_is_set(CANSTMOB, RXOK)) {
-		can_recv_msg[0] = CANMSG; // Precharge Status
-		can_recv_msg[1] = CANMSG; // High Side AIR
-		can_recv_msg[2] = CANMSG; // Low Side AIR
-		can_recv_msg[3] = CANMSG; // HV Check
-		can_recv_msg[4] = CANMSG; // Debugging
+		can_recv_msg[0] = CANMSG; // error code, can panic PANIC
+		can_recv_msg[1] = CANMSG; // Precharge Started/complete
+		can_recv_msg[2] = CANMSG; // High Side AIR
+		can_recv_msg[3] = CANMSG; // Low Side AIR
+		can_recv_msg[4] = CANMSG; // HV Check
+		can_recv_msg[5] = CANMSG; // Debugging
 
 
-		if(can_recv_msg[0] == 0xFF) {
+		if(can_recv_msg[1] == 0xFF) {
 			gFlag |= _BV(PRECHARGE);
 		}
 		else {
 			gFlag &= ~_BV(PRECHARGE);
 			gFlag &= ~_BV(STATUS_START);
-			gCAN_MSG[0] = 0x00;
+			gCAN_MSG[1] = 0x00;
 		}
 
+		if(can_recv_msg[4] == 0xFF) {
+			PORT_HV_LED |= _BV(HV_LED);
+		}
+		else {
+			PORT_HV_LED &= ~_BV(HV_LED);
+		}
 
 		// If IMD shutdown is true, make IMD_PIN high (if IMD goes low within 2 seconds of car on)
 		// make sure these latch (don't turn off until board is turned off)
@@ -242,7 +258,7 @@ ISR(CAN_INT_vect) {
 }
 
 
-ISR(PCINT1_vect) {
+ISR(PCINT1_vect) { //pin inturput, me telling myself something, stepping on a lego and my inclination to say owwww
 
 	if(bit_is_clear(PINC,START_PIN)) { //Pull up resistor. Therefore this should be bit is clear
 		gFlag |= _BV(STATUS_START);
@@ -285,9 +301,9 @@ void initIO(void) {
 	// Enable Interrupts
 	sei();
 
-	DDRB |= _BV(DEBUG_LED1) | _BV(DEBUG_LED2) | _BV(IMD_LED) | _BV(START_LED);
+	DDRB |= _BV(DEBUG_LED1) | _BV(DEBUG_LED2) | _BV(IMD_LED) | _BV(START_LED) | _BV(BRAKE_LED) ;
 	DDRC |= _BV(RTD_LSD) | _BV(RJ_LED1) | _BV(RJ_LED2);
-	DDRD |= _BV(BMS_LED);
+	DDRD |= _BV(BMS_LED) | _BV(HV_LED) | _BV(LV_LED);
 	PORT_BMS_LED &= ~_BV(BMS_LED);
 
 	//Set start pin as input
@@ -385,6 +401,9 @@ int main(void){
 	   -Wait on CAN
 	   -Infinite loop checking shutdown state!
 	 */
+
+	 //LV light on while car is on
+	 	PORT_LV_LED |= _BV(LV_LED);
 
 	_delay_ms(3000);
 
