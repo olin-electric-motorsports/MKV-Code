@@ -1,0 +1,6 @@
+#FIletypes
+*.elf
+*.hex
+
+#Directory
+outs/*
