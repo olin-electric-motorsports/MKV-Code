@@ -7,8 +7,8 @@
 
 /*----- MACROS -----*/
 #define DEBUG       PB0
-#define F_SENSE     PB3
-#define L_SENSE     PB4
+#define F_SENSE     PB1
+#define L_SENSE     PB2
 
 #define LED_PORT    PORTB
 
@@ -79,7 +79,7 @@ void initTimer(void) {
 	TCCR0A = _BV(WGM01);   // Set up 8-bit timer in CTC mode
 	TCCR0B = 0x05;         // clkio/1024 prescaler
 	TIMSK0 |= _BV(OCIE0A); // Every 1024 cycles, OCR0A increments
-	OCR0A = 0x27; //dec 39  // until 0xff, 255, which then calls for
+	OCR0A = 0xFF; //dec 39  // until 0xff, 255, which then calls for
 	// the TIMER0_COMPA_vect interrupt
 	// currently running at 100Hz
 }
@@ -109,9 +109,9 @@ int main (void) {
 			// msg[0] = 0x0F;
 			// CAN_transmit(MOB_AIR_CRIT,CAN_ID_AIR_CONTROL_CRITICAL,CAN_LEN_AIR_CONTROL_CRITICAL,msg);
 			// _delay_ms(2000);
-			air_msg[0] = 0xFF;
-			CAN_transmit(MOB_AIR_CRIT,CAN_ID_AIR_CONTROL_CRITICAL,CAN_LEN_AIR_CONTROL_CRITICAL,air_msg);
-			LED_PORT ^= _BV(DEBUG);
+			// air_msg[0] = 0xFF;
+			// CAN_transmit(MOB_AIR_CRIT,CAN_ID_AIR_CONTROL_CRITICAL,CAN_LEN_AIR_CONTROL_CRITICAL,air_msg);
+			// LED_PORT ^= _BV(DEBUG);
 
 
 			brake_msg[2] = 0xFF;
