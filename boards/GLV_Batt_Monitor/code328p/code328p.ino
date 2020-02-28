@@ -1,25 +1,29 @@
-#include "libraries/Adafruit_INA260.h"
-#include "libraries/Adafruit_INA260.cpp"
+//Import the Adafruit INA260 libraries for reading current
+#include "Adafruit_INA260.h"
+
+//Import the SPI library for communication
+#include<SPI.h>  
 
 Adafruit_INA260 ina260 = Adafruit_INA260();
 
 void setup() {
-  Serial.begin(9600);
-  // Wait until serial port is opened
-  while (!Serial) { delay(10); }
-
-  Serial.println("Adafruit INA260 Test");
-
-  if (!ina260.begin()) {
-    Serial.println("Couldn't find INA260 chip");
-    while (1);
-  }
-  Serial.println("Found INA260 chip");
+  //Start the INA260 chip
+  ina260.begin()
+  
+  //begin SPI protocol and set clock divider
+  SPI.begin();
+  SPI.setClockDivider(SPI_CLOCK_DIV16);
 }
 
 void loop() {
-  Serial.print(ina260.readCurrent()); 
-
-  Serial.println();
+  //check current through shunt resistor in INA260
+  current = ina260.readCurrent
+  
+  //set SS LOW to start transfer, then send current and set SS back to HIGH
+  digitalWrite(SS, LOW);     
+  Masterecieve = SPI.transfer(current); 
+  digitalWrite(SS, HIGH);       
+  
+  //Wait until next current check
   delay(1000);
 }
