@@ -276,13 +276,13 @@ ISR(PCINT1_vect) { //pin inturput, me telling myself something, stepping on a le
 	}
 }
 
-/*ISR(PCINT2_vect){
+ISR(PCINT2_vect){
 	if(bit_is_set(PIND,PD2)) {
 		PORTC |= _BV(PC0);
 	}else{
 		PORTC &= ~_BV(PC0);
 	}
-} */
+}
 
 ISR(TIMER0_COMPA_vect) {
 	// Only send CAN msgs every 20 cycles
@@ -308,24 +308,21 @@ void initIO(void) {
 	// Enable Interrupts
 	sei();
 
-  //Sets each of these pins as Outputs
 	DDRB |= _BV(DEBUG_LED1) | _BV(DEBUG_LED2) | _BV(IMD_LED) | _BV(START_LED) | _BV(BRAKE_LED) ;
-	DDRC |= _BV(RTD_LSD) | _BV(RJ_LED1) | _BV(RJ_LED2);//| _BV(START_PIN) --> Included below
-	DDRD |= _BV(BMS_LED) | _BV(HV_LED) | _BV(LV_LED);//| _BV(STEERING_POT) --> Included below
-
-  //Set the BMS LED as OFF
+	DDRC |= _BV(RTD_LSD) | _BV(RJ_LED1) | _BV(RJ_LED2);
+	DDRD |= _BV(BMS_LED) | _BV(HV_LED) | _BV(LV_LED);
 	PORT_BMS_LED &= ~_BV(BMS_LED);
 
 	//Set start pin as input
 	DDRC &= ~_BV(START_PIN);
 
-	//Set Start Pin as input pull up, Turning it on
-	PORT_START |= _BV(START_PIN);
+	//Set Start Pin as input pull up
+	PORTC |= _BV(START_PIN);
 
 	//Set pull up resistor for steering pot
 	PORT_STEERING_POT |= _BV(STEERING_POT);
 
-	//PORTC |= _BV(PC0);
+	PORTC |= _BV(PC0);
 
 	/* Setup pin change interrupt registers for start pin*/
 	PCICR |= _BV(PCIE1) | _BV(PCIE2);
