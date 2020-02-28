@@ -1,4 +1,5 @@
-
+#include "libraries/Adafruit_INA260.h"
+#include "libraries/Adafruit_INA260.cpp"
 
 Adafruit_INA260 ina260 = Adafruit_INA260();
 
@@ -17,9 +18,8 @@ void setup() {
 }
 
 void loop() {
-  Serial.print(ina260.readCurrent());  x
+  Serial.print(ina260.readCurrent()); 
 
   Serial.println();
   delay(1000);
 }
-

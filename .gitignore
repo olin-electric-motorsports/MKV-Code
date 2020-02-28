@@ -1,3 +1,2 @@
-outs/
-*.elf
-*.hex
+outs/*
+.hex
