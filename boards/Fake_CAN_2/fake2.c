@@ -6,9 +6,9 @@
 #include "can_api.h"
 
 /*----- MACROS -----*/
-#define LED1       PC6
-#define LED2     PB3
-#define LED3     PB4
+#define LED1       PB0
+#define LED2     PB1
+#define LED3     PB6
 
 #define LED_PORT    PORTB
 
@@ -97,7 +97,7 @@ int main (void) {
 
 
 	//Sets these pins at outputs
-	DDRC |= _BV(LED1);
+	DDRB |= _BV(LED1);
 	DDRB |= _BV(LED2) | _BV(LED3);
 	// LED_PORT |= _BV(LED1) | _BV(LED2) | _BV(LED3);
 
@@ -105,7 +105,7 @@ int main (void) {
 	while(1) {
 		if(bit_is_set(gFlag, UPDATE_STATUS)) {
 			gFlag &= ~_BV(UPDATE_STATUS);
-			PORTC ^= _BV(LED1);
+			PORTB ^= _BV(LED1);
 			PORTB ^= _BV(LED2);
 			PORTB ^= _BV(LED3);
 			// _delay_ms(500);
