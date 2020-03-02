@@ -17,25 +17,39 @@ Author:
 
 /*----- Macro Definitions -----*/
 /* ATMega 16m1 Pins */
-#define GLVMS                PD6
-#define ESTOP                PD7
-#define BSPD                 PB3
-#define CRASH_SENSOR         PB4
-#define BOTS                 PC7
-#define ESTOP_DRIVER         PB5
-#define HVD                  PB6
-#define CONNECTOR_2_HVD      PB7
-#define MAIN_PACK_CONNECTOR  PD0
-#define BMS                  PC0
-#define IMD                  PD1
-#define TSMS                 PC1
+#define GLVMS 					PD6
+#define ESTOP 					PD7
+#define BSPD 					PB3
+#define CRASH_SENSOR 			PB4
+#define BOTS 					PC7
+#define ESTOP_DRIVER 			PB5
+#define HVD 					PB6
+#define CONNECTOR_2_HVD 		PB7
+#define MAIN_PACK_CONNECTOR 	PD0
+#define BMS						PC0
+#define IMD 					PD1
+#define TSMS 					PC1
 
 /* CAN Message Positions */
-// Should be from another file (CAN API)
+#define CAN_ERROR				0
+#define CAN_BRAKE_ANALOG_MSB	1
+#define CAN_BRAKE_ANALOG_LSB	2
+#define CAN_BRAKE_GATE			3
+#define CAN_BSPD				4
+#define CAN_TSMS				5
+#define CAN_ESTOP				6
+#define CAN_GLVMS				7
 
-#define UPDATE_STATUS          0
+// CAN Mailboxes
+#define MBOX_0 					0
+#define MBOX_1 					1
+#define MBOX_2 					2
+#define MBOX_3 					3
+
+#define UPDATE_STATUS 			0
 
 volatile uint8_t gTimerFlag = 0x01;
+uint8_t gStatusMessage[8] = {};
 volatile uint8_t can_recv_msg[8] = {};
 
 void initTimer(void) {
@@ -53,18 +67,88 @@ ISR(TIMER0_COMPA_vect) {
 }
 
 ISR(CAN_INT_vect) {
-	CANPAGE = (0 << MOBNB0);
+	CANPAGE = (MBOX_1 << MOBNB0);
 	if (bit_is_set(CANSTMOB, RXOK)) {
+		can_recv_msg[0] = CANMSG;   // brake analog voltage MSB
+        can_recv_msg[1] = CANMSG;   // brake analog voltage LSB
+        can_recv_msg[2] = CANMSG;   // brake switch
+        can_recv_msg[3] = CANMSG;   // BSPD
+        can_recv_msg[4] = CANMSG;   // TSMS
+        can_recv_msg[5] = CANMSG;   // left_e_stop
+        can_recv_msg[6] = CANMSG;   // GLVMS sense
 
+		if (can_recv_msg[4] == 0xFF) {
+			// OPTIONAL _delay_ms(50) before every turn on will make the lights look a little nicer
+			PORTB |= _BV(BSPD);
+		}
+
+		if (can_recv_msg[5] == 0xFF) {
+			// OPTIONAL _delay_ms(50) before every turn on will make the lights look a little nicer
+			PORTC |= _BV(TSMS);
+		}
+
+		// Setup to receive again
+		CANSTMOB = 0x00;
+		CAN_wait_on_receive(MBOX_1, CAN_ID_BRAKE_LIGHT, CAN_LEN_BRAKE_LIGHT, 0xFF);
+	}
+
+	CANPAGE = (MBOX_2 << MOBNB0);
+	if (bit_is_set(CANSTMOB, RXOK)) {
+		can_recv_msg[1] = CANMSG;   // throttle position
+        can_recv_msg[2] = CANMSG;   // BOTS sense
+        can_recv_msg[3] = CANMSG;   // Inertia switch sense
+        can_recv_msg[4] = CANMSG;   // Driver Estop sense
+
+		if (can_recv_msg[2] == 0xFF) {
+			PORTC |= _BV(BOTS);
+		}
+		if (can_recv_msg[3] == 0xFF) {
+			PORTB |= _BV(CRASH_SENSOR);
+		}
+		if (can_recv_msg[4] == 0xFF) {
+			PORTB |= _BV(ESTOP_DRIVER);
+		}
+
+		// Setup to receive again
+		CANSTMOB = 0x00;
+		CAN_wait_on_receive(MBOX_2, CAN_ID_THROTTLE, CAN_LEN_THROTTLE, 0xFF);
+	}
+
+	CANPAGE = (MBOX_3 << MOBNB0);
+	if (bit_is_set(CANSTMOB, RXOK)) {
+		can_recv_msg[0] = CANMSG;   // Main Pack Sense
+        can_recv_msg[1] = CANMSG;   // HVD Sense
+        can_recv_msg[2] = CANMSG;   // IMD Sense
+        can_recv_msg[3] = CANMSG;   // BMS Sense
+        can_recv_msg[3] = CANMSG;   // BMS Status
+        can_recv_msg[3] = CANMSG;   // IMD Status
+
+		if (can_recv_msg[1] == 0xFF) {
+			PORTC |= _BV(BOTS);
+		}
+		if (can_recv_msg[2] == 0xFF) {
+			PORTB |= _BV(CRASH_SENSOR);
+		}
+		if (can_recv_msg[3] == 0xFF) {
+			PORTB |= _BV(ESTOP_DRIVER);
+		}
+
+		// Setup to receive again
+		CANSTMOB = 0x00;
+		CAN_wait_on_receive(MBOX_3, CAN_ID_BMS_CORE, CAN_LEN_BMS_CORE, 0xFF);
 	}
 }
 
-int main(void) {
-	// Set up LEDs
-	DDRB |= _BV(BSPD) | _BV(CRASH_SENSOR) | _BV(ESTOP_DRIVER) | _BV(HVD) | _BV(CONNECTOR_2_HVD);
-	DDRC |= _BV(BOTS) | _BV(BMS) | _BV(TSMS); 
-	DDRD |= _BV(MAIN_PACK_CONNECTOR)| _BV(IMD);
+/*
+Listen for interrupts for shutdown sense circuits for GLVMS and ESTOP
+and set can message bytes
+*/
+ISR(PCINT2_vect) {
+	gStatusMessage[CAN_GLVMS] = (bit_is_clear(PIND, GLVMS) ? 0xFF : 0x00);
+	gStatusMessage[CAN_ESTOP] = (bit_is_clear(PIND, ESTOP) ? 0xFF : 0x00);
+}
 
+int main(void) {
 	sei(); // Initializes interrupts
 	initTimer();
 
@@ -77,48 +161,29 @@ int main(void) {
 
 	CAN_init(CAN_ENABLED);
 
-	int delay = 50;
+	CAN_wait_on_receive(MBOX_1, CAN_ID_BRAKE_LIGHT, CAN_LEN_BRAKE_LIGHT, 0xFF);
+	CAN_wait_on_receive(MBOX_2, CAN_ID_THROTTLE, CAN_LEN_THROTTLE, 0xFF);
+	CAN_wait_on_receive(MBOX_3, CAN_ID_BMS_CORE, CAN_LEN_BMS_CORE, 0xFF);
 
 	while(1) {
-		PORTB ^= _BV(BSPD);
-		_delay_ms(delay);
-		PORTB ^= _BV(CRASH_SENSOR);
-		_delay_ms(delay);
-		PORTC ^= _BV(BOTS);
-		_delay_ms(delay);
-		PORTB ^= _BV(ESTOP_DRIVER);
-		_delay_ms(delay);
-		PORTB ^= _BV(HVD);
-		_delay_ms(delay);
-		PORTB ^= _BV(CONNECTOR_2_HVD);
-		_delay_ms(delay);
-		PORTD ^= _BV(MAIN_PACK_CONNECTOR);
-		_delay_ms(delay);
-		PORTC ^= _BV(BMS);
-		_delay_ms(delay);
-		PORTD ^= _BV(IMD);
-		_delay_ms(delay);
-		PORTC ^= _BV(TSMS);
-		_delay_ms(delay);
-		PORTC ^= _BV(TSMS);
-		_delay_ms(delay);
-		PORTD ^= _BV(IMD);
-		_delay_ms(delay);
-		PORTC ^= _BV(BMS);
-		_delay_ms(delay);
-		PORTD ^= _BV(MAIN_PACK_CONNECTOR);
-		_delay_ms(delay);
-		PORTB ^= _BV(CONNECTOR_2_HVD);
-		_delay_ms(delay);
-		PORTB ^= _BV(HVD);
-		_delay_ms(delay);
-		PORTB ^= _BV(ESTOP_DRIVER);
-		_delay_ms(delay);
-		PORTC ^= _BV(BOTS);
-		_delay_ms(delay);
-		PORTB ^= _BV(CRASH_SENSOR);
-		_delay_ms(delay);
-		PORTB ^= _BV(BSPD);
-		_delay_ms(delay);
+		
+		if (bit_is_set(gTimerFlag, UPDATE_STATUS)) {
+			gTimerFlag &= ~_BV(UPDATE_STATUS);
+			CAN_transmit(MBOX_0, CAN_ID_SHUTDOWN_SENSE, CAN_LEN_SHUTDOWN_SENSE, gStatusMessage);
+		}
+
 	}
 }
+/*
+	while(1) {
+		PORTB |= _BV(BSPD);
+		PORTB |= _BV(CRASH_SENSOR);
+		PORTC |= _BV(BOTS);
+		PORTB |= _BV(ESTOP_DRIVER);
+		PORTB |= _BV(HVD);
+		PORTB |= _BV(CONNECTOR_2_HVD);
+		PORTD |= _BV(MAIN_PACK_CONNECTOR);
+		PORTC |= _BV(BMS);
+		PORTD |= _BV(IMD);
+		PORTC |= _BV(TSMS);
+*/

@@ -20,7 +20,7 @@ Author:
 /* Shutdown */
 #define GLOBAL_SHUTDOWN         0
 
-#define BSPD_RELAY_SENSE        PB1
+#define BSPD_RELAY_INTENTION    PB1
 #define SHUTDOWN_SENSE_BSPD_PIN PD5
 #define BSPD_CURRENT_SENSE      PC4
 #define BRAKELIGHT_GATE         PC5
@@ -34,11 +34,10 @@ Author:
 #define RJ45_LED_O              PB4
 
 /* CAN Message Positions */
-//! WILL CHANGE @Manu
-#define CAN_BRAKE_ANALOG_MSB	0
-#define CAN_BRAKE_ANALOG_LSB	1
-#define CAN_BRAKE_GATE		    2
-#define CAN_BSPD		        3
+#define CAN_BRAKE_ANALOG_MSB	1
+#define CAN_BRAKE_ANALOG_LSB	2
+#define CAN_BRAKE_GATE		    3
+#define CAN_BSPD		        4
 
 /* CAN Message Objects */
 #define MOB_PANIC		        0
@@ -49,7 +48,7 @@ Author:
 
 #define UPDATE_STATUS           0
 
-uint8_t gStatusMessage[7] = {0xFF, 0, 0, 0, 0, 0, 0};
+uint8_t gStatusMessage[8] = {0, 0, 0, 0, 0xFF, 0, 0, 0};
 
 volatile uint8_t gTimerFlag = 0x01;
 
@@ -67,12 +66,12 @@ ISR(TIMER0_COMPA_vect) {
 	gTimerFlag = _BV(UPDATE_STATUS);
 }
 
-ISR(PCINT2_vect) {
+ISR(PCINT1_vect) {
     gStatusMessage[CAN_BRAKE_GATE] = (bit_is_set(PINC, BRAKELIGHT_GATE) ? 0xFF : 0x00);
 }
 
-ISR(PCINT0_vect){
-    gStatusMessage[CAN_BSPD] = (bit_is_clear(PIND, SHUTDOWN_SENSE_BSPD_PIN) ? 0xFF: 0x00);
+ISR(PCINT2_vect) {
+    gStatusMessage[CAN_BSPD] = (bit_is_set(PIND, SHUTDOWN_SENSE_BSPD_PIN) ? 0xFF: 0x00);
 }
 
 void initADC(void) {
@@ -114,22 +113,20 @@ int main(void) {
 	initTimer();
 
 	// Pin Change Interrupt Control Register
-	PCICR |= _BV(PCIE0) | _BV(PCIE1) | _BV(PCIE2);
+	PCICR |= _BV(PCIE1) | _BV(PCIE2); // | _BV(PCIE0);
 	// PCIE0 enables interrupts on PCINT23..16. Each pin is enabled by PCMSK0
 	// PCIE1 enables interrupts on PCINT41..8. Each pin is enabled by PCMSK1
 	// PCIE2 enables interrupts on PCINT7..0. Each pin is enabled by PCMSK2
 
-	PCMSK0 |= _BV(PCINT21); // SHUTDOWN_SENSE_BSPD_PIN
+	PCMSK2 |= _BV(PCINT21); // SHUTDOWN_SENSE_BSPD_PIN
 	PCMSK1 |= _BV(PCINT13); // BRAKELIGHT_GATE
-	PCMSK2 |= _BV(PCINT1); // BSPD_RELAY_SENSE // BSPD_RELAY_INTENTION
+	// PCMSK0 |= _BV(PCINT1); // BSPD_RELAY_INTENTION // BSPD_RELAY_INTENTION
 
 	initADC();
 	CAN_init(CAN_ENABLED);
 
 	while(1) {
-		// PORTB ^= _BV(RJ45_LED_G);
 		if (bit_is_set(gTimerFlag, UPDATE_STATUS)) {
-			// PORTD ^= _BV(RJ45_LED_O);
 			gTimerFlag &= ~_BV(UPDATE_STATUS);
 			readBrakePressure();
 			CAN_transmit(0, CAN_ID_BRAKE_LIGHT, CAN_LEN_BRAKE_LIGHT, gStatusMessage);
