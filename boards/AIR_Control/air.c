@@ -27,7 +27,7 @@
 #define PRECHARGE_CTRL			PB2
 #define PRECHARGE_PORT		PORTB
 #define AIRMINUS_LSD			  	PC6
-#define AIRPMINUS_PORT			PORTC
+#define AIRMINUS_PORT			PORTC
 
 /*----- Inputs (PINs because we read them) -----*/
 #define PIN_AIRPLUS_WELD_DET				 PC4 // PCINT12
