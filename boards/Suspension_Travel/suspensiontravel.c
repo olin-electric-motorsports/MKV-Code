@@ -1,3 +1,10 @@
+/*
+
+    Suspension Travel Control Board
+
+*/
+
+
 #include <avr/io.h>
 #include "can_api.h"
 
@@ -20,6 +27,9 @@
 // https://docs.olinelectricmotorsports.com/display/MD/Suspension+Travel
 #define POTENTIOMETER_INPUT 8
 
+// Specific IDs for CAN messages
+#define CAN_ID CAN_ID_SUS_TRAVEL_FR
+#define CAN_LEN CAN_LEN_SUS_TRAVEL_FR
 
 uint8_t msg[] = {0,0,0};
 volatile uint8_t gFlag = 0;
@@ -39,6 +49,10 @@ void ADC_init(void) {
 }
 
 void initTimer0(void) {
+    /* 
+     * Set up a timer that times out at
+     * a rate of 60 Hz
+     */
     TCCR0A = _BV(WGM01);    // Set up 8-bit timer in CTC mode
     TCCR0B |= _BV(CS00) | _BV(CS02);          // clkio/1024 prescaler
     TIMSK0 |= _BV(OCIE0A);  // Every 1024 cycles
@@ -81,7 +95,7 @@ uint16_t readPotentiometer (void) {
 
 void sendCANMessage (uint8_t msg[]) {
 
-  CAN_transmit(0, 0, 0, msg);
+  CAN_transmit(0, CAN_ID, CAN_LEN, msg);
 }
 
 int main (void) {
