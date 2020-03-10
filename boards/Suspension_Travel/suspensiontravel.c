@@ -27,9 +27,27 @@
 // https://docs.olinelectricmotorsports.com/display/MD/Suspension+Travel
 #define POTENTIOMETER_INPUT 8
 
-// Specific IDs for CAN messages
-#define CAN_ID CAN_ID_SUS_TRAVEL_FR
-#define CAN_LEN CAN_LEN_SUS_TRAVEL_FR
+#define FRONT 0
+#define RIGHT 1
+
+#if (FRONT && RIGHT)
+    // Specific IDs for CAN messages
+    #define CAN_ID CAN_ID_SUS_TRAVEL_FR
+    #define CAN_LEN CAN_LEN_SUS_TRAVEL_FR
+#elif (FRONT)
+    // Specific IDs for CAN messages
+    #define CAN_ID CAN_ID_SUS_TRAVEL_FL
+    #define CAN_LEN CAN_LEN_SUS_TRAVEL_FL
+#elif (RIGHT)
+    // Specific IDs for CAN messages
+    #define CAN_ID CAN_ID_SUS_TRAVEL_BR
+    #define CAN_LEN CAN_LEN_SUS_TRAVEL_BR
+#else
+    // Specific IDs for CAN messages
+    #define CAN_ID CAN_ID_SUS_TRAVEL_BL
+    #define CAN_LEN CAN_LEN_SUS_TRAVEL_BL
+#endif
+
 
 uint8_t msg[] = {0,0,0};
 volatile uint8_t gFlag = 0;
@@ -101,6 +119,7 @@ void sendCANMessage (uint8_t msg[]) {
 int main (void) {
     sei();
     ADC_init();
+    CAN_init(CAN_ENABLED);
     initTimer0();
 
     DDRB |= _BV(LED1) | _BV(LED2) | _BV(LED3);
