@@ -67,8 +67,12 @@ MyScreenManager:
         Label:
             text: root.Grid
             color: 0,0,0,1
-            font_size: 30
-            multiline:True
+            text_size:self.size
+            halign:'left'
+            padding_x: 10
+            valign:'top'
+            padding_y: 10
+            multiline: True
             canvas.before:
                 Color:
                     rgba: 1, 1, 1, 1

@@ -1,0 +1,130 @@
+#:kivy 1.10.0
+
+<SelectableButton>:
+    # Draw a background to indicate selection
+    canvas.before:
+        Color:
+            rgba: (0.95, 0.95, 0.95, 1) if self.selected else (0.75, 0.75, 0.75, 1)
+        Rectangle:
+            pos: self.pos
+            size: self.size
+    background_color: [1, 0, 0, 1]  if self.selected else [1, 1, 1, 1]  # dark red else dark grey
+    on_release: app.root.add_row(self)
+
+
+
+<QuestionDb>:
+    column_headings: column_headings
+    orientation: 'vertical'
+    canvas.before:
+        Color:
+            rgba: (0,0,0, 1)
+        Rectangle:
+            pos: self.pos
+            size: self.size
+    Label:
+        orientation: 'vertical'
+        canvas.before:
+            Color:
+                rgba: (.2, .5, .9, 1)
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        text: 'CAN BUS MESSAGES'
+        size_hint_y: 0.1
+    BoxLayout:
+        size_hint_y: .0825
+        orientation: 'vertical'
+        canvas.before:
+            Color:
+                rgba: .85, .85, .85, 0
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
+        BoxLayout:
+            size_hint_y: 10
+            Button:
+                pos_hint: {'top': 1}
+                text: 'MAIN OUTPUT'
+                font_size: 12
+                #on_release: app.root.current = 'main'
+                size: dp(100), dp(40)
+                size_hint: None, None # <---
+                background_color: .26, .40, .69, .85
+            Button:
+                pos_hint: {'top': 1}
+                text: 'Charging'
+                font_size: 12
+                #on_release: app.root.current = 'charging'
+                size: dp(100), dp(40)
+                size_hint: None, None # <---
+            Button:
+                pos_hint: {'top': 1}
+                text: 'Voltage'
+                font_size: 12
+                #on_release: app.root.current = 'voltage'
+                size: dp(100), dp(40)
+                size_hint: None, None # <---
+            Button:
+                pos_hint: {'top': 1}
+                text: 'BMS'
+                font_size: 12
+                #on_release: app.root.current = 'bms'
+                size: dp(100), dp(40)
+                size_hint: None, None # <---
+            Button:
+                pos_hint: {'top': 1}
+                text: 'Shutdown Nodes'
+                font_size: 12
+                #on_release: app.root.current = 'nodes'
+                size: dp(100), dp(40)
+                size_hint: None, None # <---
+            Button:
+                pos_hint: {'top': 1}
+                text: 'TSAL'
+                font_size: 12
+                #on_release: app.root.current = 'tsal'
+                size: dp(100), dp(40)
+                size_hint: None, None # <---
+    GridLayout:
+        orientation: 'vertical'
+        canvas.before:
+            Color:
+                rgba: (1,.9,.2, 1)
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
+        id: column_headings
+        size_hint: 1, None
+        size_hint_y: None
+        height: 25
+        cols: 6
+
+    BoxLayout:
+        canvas.before:
+            Color:
+                rgba: (.9, 0.9, .9, 1)
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
+        RecycleView:
+            viewclass: 'SelectableButton'
+            data: root.rv_data
+            SelectableRecycleGridLayout:
+                cols: 6
+                key_selection: 'selectable'
+                default_size: None, dp(26)
+                default_size_hint: 1, None
+                size_hint_y: None
+                height: self.minimum_height
+                multiselect: True
+                touch_multiselect: True
+    Image:
+        source: '/home/tolu/Desktop/OEM-Logo.png'
+        size: dp(150), dp(75)
+        size_hint: None, None # <---
+        allow_stretch: False
+        keep_ratio: True
