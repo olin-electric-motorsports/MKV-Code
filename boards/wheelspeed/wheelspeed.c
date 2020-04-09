@@ -21,9 +21,9 @@
 
 volatile uint8_t gFlag = 0x00;
 volatile uint8_t wheel_speed_current_count = 0;
-uint8_t wheel_speed_msg[2] = {0, 0};
-uint16_t CAN_ID = 0;
-uint16_t CAN_LEN = 0;
+uint8_t wheel_speed_msg[2] = {0, 0}; #COMMENT; does this need to be a global?
+uint16_t CAN_ID = 0; #COMMENT; does this need to be a global?
+uint16_t CAN_LEN = 0; #COMMENT; does this need to be a global?
 
 
 ISR(PCINT0_vect) {
@@ -66,6 +66,7 @@ uint16_t getCANID() {
         return CAN_ID_WHEEL_SPEED_BR;
     }
     return CAN_ID_WHEEL_SPEED_FL;  // Should not get here, but default to front left
+    #COMMENT; consider having default return be something you know it shouldn't ever be, like an error, and checking for that in main()
 }
 
 uint16_t getCANLEN() {
@@ -85,6 +86,7 @@ uint16_t getCANLEN() {
         return CAN_LEN_WHEEL_SPEED_BR;
     }
     return CAN_LEN_WHEEL_SPEED_FL;  // Should not get here, but default to front left
+    #COMMENT; consider having default return be something you know it shouldn't ever be, like an error, and checking for that in main()
 }
 
 void reportSpeed() {
@@ -117,6 +119,7 @@ int main(void) {
     initTimer();
     CAN_init(CAN_ENABLED);
     
+    #COMMENT; consider turning these into one function to avoid duplicating logic
     // Set CAN ID and CAN LEN
     CAN_ID = getCANID();
     CAN_LEN = getCANLEN();
