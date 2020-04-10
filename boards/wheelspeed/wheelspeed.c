@@ -21,10 +21,6 @@
 
 volatile uint8_t gFlag = 0x00;
 volatile uint8_t wheel_speed_current_count = 0;
-uint8_t wheel_speed_msg[2] = {0, 0}; #COMMENT; does this need to be a global?
-uint16_t CAN_ID = 0; #COMMENT; does this need to be a global?
-uint16_t CAN_LEN = 0; #COMMENT; does this need to be a global?
-
 
 ISR(PCINT0_vect) {
     // Interrupt for pin PB4
@@ -49,50 +45,33 @@ ISR(TIMER0_COMPA_vect) {
 	gFlag |= _BV(UPDATE_STATUS);
 }
 
-uint16_t getCANID() {
+void setCANIDLEN(uint16_t * CAN_ID, uint16_t * CAN_LEN) {
     /**
-     * Check which board this is and set the ID based on that
+     * Check which board this is and set the ID and LEN based on that
      */
     int front_set = bit_is_set(FRONT_READ_REGISTER, FRONT_PIN);
     int left_set = bit_is_set(LEFT_READ_REGISTER, LEFT_PIN);
 
     if(front_set && left_set) {
-        return CAN_ID_WHEEL_SPEED_FL;
+        *CAN_ID = CAN_ID_WHEEL_SPEED_FL;
+        *CAN_LEN = CAN_LEN_WHEEL_SPEED_FL;
     } else if (front_set && !left_set) {
-        return CAN_ID_WHEEL_SPEED_FR;
+        *CAN_ID = CAN_ID_WHEEL_SPEED_FR;
+        *CAN_LEN = CAN_LEN_WHEEL_SPEED_FR;
     } else if (!front_set && left_set) {
-        return CAN_ID_WHEEL_SPEED_BL;
+        *CAN_ID = CAN_ID_WHEEL_SPEED_BL;
+        *CAN_LEN = CAN_LEN_WHEEL_SPEED_BL;
     } else if (!front_set && !left_set) {
-        return CAN_ID_WHEEL_SPEED_BR;
+        *CAN_ID = CAN_ID_WHEEL_SPEED_BR;
+        *CAN_LEN = CAN_LEN_WHEEL_SPEED_BR;
     }
-    return CAN_ID_WHEEL_SPEED_FL;  // Should not get here, but default to front left
-    #COMMENT; consider having default return be something you know it shouldn't ever be, like an error, and checking for that in main()
 }
 
-uint16_t getCANLEN() {
-    /**
-     * Check which board this is and set the LEN based on that
-     */
-    int front_set = bit_is_set(FRONT_READ_REGISTER, FRONT_PIN);
-    int left_set = bit_is_set(LEFT_READ_REGISTER, LEFT_PIN);
-
-    if(front_set && left_set) {
-        return CAN_LEN_WHEEL_SPEED_FL;
-    } else if (front_set && !left_set) {
-        return CAN_LEN_WHEEL_SPEED_FR;
-    } else if (!front_set && left_set) {
-        return CAN_LEN_WHEEL_SPEED_BL;
-    } else if (!front_set && !left_set) {
-        return CAN_LEN_WHEEL_SPEED_BR;
-    }
-    return CAN_LEN_WHEEL_SPEED_FL;  // Should not get here, but default to front left
-    #COMMENT; consider having default return be something you know it shouldn't ever be, like an error, and checking for that in main()
-}
-
-void reportSpeed() {
+void reportSpeed(uint16_t CAN_ID, uint16_t CAN_LEN) {
     /**
      * Report speed over CAN
      */
+    uint8_t wheel_speed_msg[2] = {0, 0};
     wheel_speed_msg[0] = 0x00; // no error codes defined yet
     wheel_speed_msg[1] = wheel_speed_current_count;
     wheel_speed_current_count = 0;
@@ -119,15 +98,15 @@ int main(void) {
     initTimer();
     CAN_init(CAN_ENABLED);
     
-    #COMMENT; consider turning these into one function to avoid duplicating logic
     // Set CAN ID and CAN LEN
-    CAN_ID = getCANID();
-    CAN_LEN = getCANLEN();
+    uint16_t * CAN_ID = 0;
+    uint16_t * CAN_LEN = 0;
+    setCANIDLEN(CAN_ID, CAN_LEN);
 
     while(1) {
         if(bit_is_set(gFlag, UPDATE_STATUS)) {
             gFlag &= ~_BV(UPDATE_STATUS);
-            reportSpeed();
+            reportSpeed(*CAN_ID, *CAN_LEN);
         }
     }
 }
