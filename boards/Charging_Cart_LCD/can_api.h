@@ -12,39 +12,44 @@
 
 #define CAN_ID_BRAKE_LIGHT       ((uint16_t) 0x0B)
 #define CAN_ID_THROTTLE          ((uint16_t) 0x0C)
-#define CAN_ID_AIR_CONTROL       ((uint16_t) 0x0D)
-#define CAN_ID_DASHBOARD         ((uint16_t) 0x0E)
-#define CAN_ID_WHEELSPEED        ((uint16_t) 0x0F)
-#define CAN_ID_SUSPENSION        ((uint16_t) 0x10)
-#define CAN_ID_BMS_MASTER        ((uint16_t) 0x11)
-#define CAN_ID_BMS_TEMP          ((uint16_t) 0x12)
+#define CAN_ID_AIR_CONTROL_CRITICAL       ((uint16_t) 0x0D)
+#define CAN_ID_AIR_CONTROL_SENSE          ((uint16_t) 0x0E)
+#define CAN_ID_DASHBOARD         ((uint16_t) 0x0F)
+#define CAN_ID_BMS_CORE        ((uint16_t) 0x10)
+
+// #define CAN_ID_BMS_TEMP          ((uint16_t) 0x12)
+#define CAN_ID_STEERING_WHEEL    ((uint16_t) 0x12)
 #define CAN_ID_BMS_VOLT          ((uint16_t) 0x13)
 #define CAN_ID_BMS_DISCHARGE     ((uint16_t) 0x14)
 #define CAN_ID_MOTORCONTROLLER   ((uint16_t) 0x15)
+#define CAN_ID_STEERING_WHEEL    ((uint16_t) 0x12)
 
 #define CAN_ID_MC_POSITION       ((uint16_t) 0xA5)
 #define CAN_ID_MC_CURRENT        ((uint16_t) 0xA6)
 #define CAN_ID_MC_VOLTAGE        ((uint16_t) 0xA7)
 #define CAN_ID_MC_COMMAND        ((uint16_t) 0xC0)
 
-#define CAN_ID_BRAKE_PRESSURE    ((uint16_t) 0x16)
+#define CAN_ID_BRAKE_PRESSURE    ((uint16_t) 0x18)
+
+#define CAN_ID_TUTORIAL6         ((uint16_t) 0x25)
 
 
 /* Message Lengths */
 #define CAN_LEN_GLOBAL          ((uint16_t) 8)
 #define CAN_LEN_PANIC           ((uint16_t) 1)
 
-#define CAN_LEN_BRAKE_LIGHT     ((uint16_t) 8)
-#define CAN_LEN_THROTTLE        ((uint16_t) 5)
-#define CAN_LEN_AIR_CONTROL     ((uint16_t) 5)
-#define CAN_LEN_DASHBOARD       ((uint16_t) 1)
-#define CAN_LEN_WHEELSPEED      ((uint16_t) 4)
-#define CAN_LEN_SUSPENSION      ((uint16_t) 6)
-#define CAN_LEN_BMS_MASTER      ((uint16_t) 5)
-#define CAN_LEN_BMS_TEMP        ((uint16_t) 8)
+#define CAN_LEN_BRAKE_LIGHT     ((uint16_t) 7)
+#define CAN_LEN_THROTTLE        ((uint16_t) 4)
+#define CAN_LEN_AIR_CONTROL_CRITICAL     ((uint16_t) 4)
+#define CAN_LEN_AIR_CONTROL_SENSE        ((uint16_t) 6)
+#define CAN_LEN_DASHBOARD       ((uint16_t) 3)
+#define CAN_LEN_BMS_CORE        ((uint16_t) 7)
+
+// #define CAN_LEN_BMS_TEMP        ((uint16_t) 8)
 #define CAN_LEN_BMS_VOLT        ((uint16_t) 8)
 #define CAN_LEN_BMS_DISCHARGE   ((uint16_t) 8)
 #define CAN_LEN_MOTORCONTROLLER ((uint16_t) 8)
+#define CAN_LEN_STEERING_WHEEL  ((uint16_t) 1)
 
 #define CAN_LEN_MC_POSITION     ((uint16_t) 8)
 #define CAN_LEN_MC_CURRENT      ((uint16_t) 8)
@@ -53,11 +58,12 @@
 
 #define CAN_LEN_BRAKE_PRESSURE  ((uint16_t) 2)
 
+#define CAN_LEN_TUTORIAL6       ((uint16_t) 1)
 
 /* Masks */
-#define CAN_IDM_global            ((uint16_t) 0x00)
-#define CAN_IDM_single            ((uint16_t) 0xFF)
-#define CAN_IDM_double            ((uint16_t) 0xFE)
+#define CAN_MSK_GLOBAL            ((uint16_t) 0x00)
+#define CAN_MSK_SINGLE            ((uint16_t) 0xFF)
+#define CAN_MSK_DOUBLE            ((uint16_t) 0xFE)
 
 
 /* Modes of Operation */

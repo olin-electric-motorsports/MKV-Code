@@ -1,0 +1,61 @@
+#:kivy 1.10.0
+
+<SelectableButton>:
+    # Draw a background to indicate selection
+    canvas.before:
+        Color:
+            rgba: (0, 0.517, 0.705, 1) if self.selected else (0, 0.517, 0.705, 1)
+        Rectangle:
+            pos: self.pos
+            size: self.size
+    background_color: [1, 0, 0, 1]  if self.selected else [1, 1, 1, 1]  # dark red else dark grey
+    on_release: app.root.delete_row(self)
+
+<QuestionDb>:
+    column_headings: column_headings
+    orientation: "vertical"
+
+    Label:
+        canvas.before:
+            Color:
+                rgba: (0, 0, 1, .5)     # 50% translucent blue
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        text: 'CAN BUS MESSAGES'
+        size_hint: 1, 0.1
+
+    GridLayout:
+        canvas.before:
+            Color:
+                rgba: (1, 0.2, 0, .5)     # 50% translucent orange red
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
+        id: column_headings
+        size_hint: 1, None
+        size_hint_y: None
+        height: 25
+        cols: 6
+
+    BoxLayout:
+        canvas.before:
+            Color:
+                rgba: (.0, 0.9, .1, .3)
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
+        RecycleView:
+            viewclass: 'SelectableButton'
+            data: root.rv_data
+            SelectableRecycleGridLayout:
+                cols: 6
+                key_selection: 'selectable'
+                default_size: None, dp(26)
+                default_size_hint: 1, None
+                size_hint_y: None
+                height: self.minimum_height
+                multiselect: True
+                touch_multiselect: True
