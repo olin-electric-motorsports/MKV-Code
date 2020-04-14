@@ -8,6 +8,6 @@ As of right now, the code is written to run on a generic atmega16m1 test board. 
 
 ### Next steps
 
-- [ ] Send data over CAN
+- [x] Send data over CAN
 - [ ] Implement software filtering for the wheel speed data (and investigate if this is necessary)
-- [x] Implement speed calculations
+- [x] ~~Implement speed calculations~~ This idea was scrapped because of the ATMEGA not supporting floating point numbers. Instead, we will send the raw speeds and have the true values be calculated on the other side.
