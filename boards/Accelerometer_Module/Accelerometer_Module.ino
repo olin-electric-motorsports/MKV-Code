@@ -29,9 +29,14 @@
 #define DDR_BUTTON DDRD
 
 
-/****** Accelerometer Macros ******/
-#define DDR_ACC DDRB
-#define PORT_ACC PORTB
+/****** SPI Macros ******/
+
+#define MOSI PB3
+#define MISO PB4
+#define SCK PB5
+// Accelerometer
+#define DDR_SPI DDRB
+#define PORT_SPI PORTB
 #define ACC_CS PB2
 
 #define READ 1
@@ -50,19 +55,16 @@ void setup() {
   DDR_VLED |= _BV(HIGH_VLED);
 
   // Accelerometer CS Pin
-  DDR_ACC |= _BV(ACC_CS);
+  DDR_SPI |= _BV(ACC_CS);
 
-  // Accelerometer Datasheet - Max Speed 1MHz
-  // Page 27 - SPI MODE 0 - Output on Falling Edge, Data Capture on Rising Edge
-  SPI.beginTransaction(SPISettings(400000, MSBFIRST, SPI_MODE0));
-  PORT_ACC &= ~_BV(ACC_CS);
-  result = SPI.transfer(0b11111111);
-  PORT_ACC |= _BV(ACC_CS);
-  SPI.endTransaction();
+  // Set SPI pins at Output
+  DDR_SPI |= _BV(SCK) | _BV(MOSI);
+
   
   if (result == 0b00110011) {
     PORT_VLED |= _BV(HIGH_VLED);
   }
+
   
 //  PCICR |= _BV(PCIE2);
 //  PCMSK2 |= _BV(PCINT23);
@@ -75,13 +77,20 @@ void setup() {
 
 void loop() {
   unsigned int result = 0;
+  
+  
+  // Accelerometer Datasheet - Max Speed 1MHz
+  // Page 27 - SPI MODE 0 - Output on Falling Edge, Data Capture on Rising Edge
   SPI.beginTransaction(SPISettings(400000, MSBFIRST, SPI_MODE0));
-  PORT_ACC &= ~_BV(ACC_CS);
+  PORT_SPI &= ~_BV(ACC_CS);
   result = SPI.transfer(0b10001111);
   SPI.endTransaction();
   
+
+  
+  
   if (result == 0b00110011) {
-    PORT_ACC |= _BV(ACC_CS);
+    PORT_SPI |= _BV(ACC_CS);
   }
   
   if (bit_is_set( PINB, PB1 )) {
