@@ -45,7 +45,7 @@ ISR(TIMER0_COMPA_vect) {
 	gFlag |= _BV(UPDATE_STATUS);
 }
 
-void setCANIDLEN(uint16_t * CAN_ID, uint16_t * CAN_LEN) {
+void setCANIDLEN(uint16_t * can_id, uint16_t * can_len) {
     /**
      * Check which board this is and set the ID and LEN based on that
      */
@@ -53,21 +53,21 @@ void setCANIDLEN(uint16_t * CAN_ID, uint16_t * CAN_LEN) {
     int left_set = bit_is_set(LEFT_READ_REGISTER, LEFT_PIN);
 
     if(front_set && left_set) {
-        *CAN_ID = CAN_ID_WHEEL_SPEED_FL;
-        *CAN_LEN = CAN_LEN_WHEEL_SPEED_FL;
+        *can_id = CAN_ID_WHEEL_SPEED_FL;
+        *can_len = CAN_LEN_WHEEL_SPEED_FL;
     } else if (front_set && !left_set) {
-        *CAN_ID = CAN_ID_WHEEL_SPEED_FR;
-        *CAN_LEN = CAN_LEN_WHEEL_SPEED_FR;
+        *can_id = CAN_ID_WHEEL_SPEED_FR;
+        *can_len = CAN_LEN_WHEEL_SPEED_FR;
     } else if (!front_set && left_set) {
-        *CAN_ID = CAN_ID_WHEEL_SPEED_BL;
-        *CAN_LEN = CAN_LEN_WHEEL_SPEED_BL;
+        *can_id = CAN_ID_WHEEL_SPEED_BL;
+        *can_len = CAN_LEN_WHEEL_SPEED_BL;
     } else if (!front_set && !left_set) {
-        *CAN_ID = CAN_ID_WHEEL_SPEED_BR;
-        *CAN_LEN = CAN_LEN_WHEEL_SPEED_BR;
+        *can_id = CAN_ID_WHEEL_SPEED_BR;
+        *can_len = CAN_LEN_WHEEL_SPEED_BR;
     }
 }
 
-void reportSpeed(uint16_t CAN_ID, uint16_t CAN_LEN) {
+void reportSpeed(uint16_t can_id, uint16_t can_len) {
     /**
      * Report speed over CAN
      */
@@ -76,10 +76,10 @@ void reportSpeed(uint16_t CAN_ID, uint16_t CAN_LEN) {
     wheel_speed_msg[1] = wheel_speed_current_count;
     wheel_speed_current_count = 0;
 
-    if (CAN_ID && CAN_LEN) {
-        // Only transmit if CAN_ID and CAN_LEN are set
-        // If CAN_ID or CAN_LEN are somehow 0 we don't want to introduce incorrect CAN messages to the bus.
-        CAN_transmit(MOB_WHEEL_SPEED_SEND, CAN_ID, CAN_LEN, wheel_speed_msg);
+    if (can_id && can_len) {
+        // Only transmit if can_id and can_len are set
+        // If can_id or can_len are somehow 0 we don't want to introduce incorrect CAN messages to the bus.
+        CAN_transmit(MOB_WHEEL_SPEED_SEND, can_id, can_len, wheel_speed_msg);
     }
 
 }
@@ -99,14 +99,14 @@ int main(void) {
     CAN_init(CAN_ENABLED);
     
     // Set CAN ID and CAN LEN
-    uint16_t * CAN_ID = 0;
-    uint16_t * CAN_LEN = 0;
-    setCANIDLEN(CAN_ID, CAN_LEN);
+    uint16_t * can_id = 0;
+    uint16_t * can_len = 0;
+    setCANIDLEN(can_id, can_len);
 
     while(1) {
         if(bit_is_set(gFlag, UPDATE_STATUS)) {
             gFlag &= ~_BV(UPDATE_STATUS);
-            reportSpeed(*CAN_ID, *CAN_LEN);
+            reportSpeed(*can_id, *can_len);
         }
     }
 }
