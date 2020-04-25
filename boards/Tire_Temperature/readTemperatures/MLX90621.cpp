@@ -5,7 +5,7 @@
  *      Author: Max
  */
 #include "MLX90621.h"
-#include <i2c_t3.h>
+//#include <i2c_t3.h>
 #include <Wire.h>
 void MLX90621::initialise(int refrate) {
 	refreshRate = refrate;
@@ -25,9 +25,9 @@ void MLX90621::measure() {
 	}
 	readPTAT();
 	readIR();
-	calculateTA();
+	//calculateTA();
 	readCPIX();
-	calculateTO();
+	//calculateTO();
 }
 
 float MLX90621::getTemperature(int num) {
