@@ -82,6 +82,7 @@ ISR(TIMER0_COMPA_vect) {
 
         gFlag |= TRANSMIT_STATUS;
         LED_PORT ^= _BV(LED1_PIN);
+        LED_PORT ^= _BV(LED2_PIN);
 
         // Set EXT LED1 high for start of cycle
         EXT_LED_PORT |= _BV(EXT_LED1_PIN);
@@ -327,6 +328,8 @@ int main (void) {
     /* Set the data direction register so the led pin is output */
     LED_DDR |= _BV(LED1_PIN) | _BV(LED2_PIN) | _BV(LED3_PIN);
     DDRB |= _BV(EXT_LED1_PIN) | _BV(EXT_LED2_PIN);
+
+    LED_PORT ^= _BV(LED3_PIN);
 
     sei();
     /* Initialize CAN */

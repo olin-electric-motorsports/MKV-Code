@@ -18,7 +18,7 @@
 #include "spi.h"
 #include "ltc6811_defs.h"
 
-#define TOTAL_IC    12
+#define TOTAL_IC    2
 #define NUM_CELLS   12 //There are 10, but we need to read all 12 back.
 #define NUM_TEMPS   20  //There are 20 temp sensors per segment
 #define NUM_AUX_CH  6   // There are 10 AUX voltages
