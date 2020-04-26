@@ -25,13 +25,9 @@ Builder.load_string('''
             source: "bat.png"
             pos: self.pos
             size: self.size
-    Label:
-        id:cell_text
-        center:root.center
-        text: 'Cell'
-        color: 0,0,0,1
 
 <Rec>:
+    cellSize:2,2
     bgcolor:0.0,1.0,0.0,0.8
     canvas:
         Color:
@@ -39,13 +35,22 @@ Builder.load_string('''
         Rectangle:
             pos:self.pos
             size:self.size
+        Color: #Defines color of the PNG
+            rgba: 1, 1, 1, 1
+        Rectangle:
+            source: "bat.png"
+            pos: self.pos
+            size: self.cellSize
+
     Label:
         id:cell_text
         color:0,0,0,1
         text:root.voltage
-        text_size: root.width, None
+        text_size: root.width,None
+        font_size:12
+        halign:'center'
         size: self.texture_size
-        pos:root.pos
+        pos:(root.pos[0],root.pos[1]+3)
 
 <ButtonsGalore>:
     grid: Grid
@@ -68,14 +73,14 @@ series = 16
 sTotal = segments * series
 
 # Threshold colours
-red =  (1,0,0,0.8) # Less than 2.5V
-green =(0,1,0,0.8) # Between 2.5V and 4.2V
-blue = (0,0,1,0.8) # Above 4.2V
+underVoltage = (255/255,240/255,36/255,1) # Yellow Less than 2.5V
+justRight =    (21/255,232/255,26/255,1) # Green Between 2.5V and 4.2V
+overVoltage =  (255/255,43/255,23/255,1) # Red  Above 4.2V
 
 
 cValues = [100]*sTotal
 for i in range(sTotal):
-    cValues[i] = random.randrange(20,45)/10
+    cValues[i] = random.randrange(23,45)/10
 print(cValues)
 
 class ButtonsGalore(BoxLayout):
@@ -83,34 +88,18 @@ class ButtonsGalore(BoxLayout):
 
 class Rec(Widget):
     voltage = StringProperty()
-    pass
+
 
 class myCell(Widget):
     pass
 
-# class allCells(Widget):
-
-#     def __init__(self,**kwargs):
-#         super(allCells,self).__init__(**kwargs)
-#         self.bind(pos=self.update_canvas)
-#         self.bind(size=self.update_canvas)
-#         self.update_canvas()
-
-#     def update_canvas(self,*args):
-#         # need to reset everything
-#         self.canvas.clear()
-#         with self.canvas:
-#             # Instruction
-#             Color(0,1,0,1)
-
-#             self.rect = Rectangle(pos=self.pos,size=self.size)
 
 class cellDisplay(Widget):
 
     def __init__(self, **kwargs):
         super(cellDisplay, self).__init__(**kwargs)
         # self.cells = 96*[Rectangle(pos=self.center,size=(self.width/4,self.height/4))]
-        self.cells = 96*[Rec()]
+        self.cells = sTotal*[Rec()]
         
         with self.canvas:
 
@@ -123,34 +112,45 @@ class cellDisplay(Widget):
                   size=self.update_canvas)
 
     def update_canvas(self, *args):
-        xPartition = self.width/16
-        yPartition = self.height/6
-        hPartition = self.height/6
-        wPartition = self.width/10
+        # Offsets and refernces for the cells locatons
+        xCellBlockOffset = 45
+        yCellBlockOffset = 10
+        offSet = 0
+        xPartition = (self.width -xCellBlockOffset)/series
+        yPartition = (self.height-yCellBlockOffset)/segments
+        hPartition = (self.height-yCellBlockOffset)/segments
+        wPartition = (self.width -xCellBlockOffset)/(segments+4)
+        # I don't want 2.5V and below to be invisible 
+        # 300/340 is the height of the cell png before it goes above
+        lowerVoltageOffset = (50/340)*(hPartition-30)
+        fullCellHeight = (hPartition-30)*(250/340)
         for i in range(len(cValues)):
+            # Retrive cell voltage
             val = cValues[i]
-            x_loc = xPartition*(i%16)+10
-            y_loc = yPartition*math.floor(i/16)+15
-            h = (hPartition-30)*(val/4.2)
+            x_loc = xPartition*(i%series)+xCellBlockOffset
+            y_loc = yPartition*math.floor(i/series)+yCellBlockOffset
+            pcFull = min(max((val-2.5),.01),1.8)/1.7
+            h = fullCellHeight*pcFull+lowerVoltageOffset
             w = (wPartition-20)
-            self.cells[i].pos=(x_loc,y_loc)
-            self.cells[i].size=(w,h)
+            self.cells[i].pos=(x_loc+5,y_loc+5)
+            self.cells[i].size=(w-2,h-2)
             self.cells[i].voltage = str(val)
+            self.cells[i].cellSize = ((wPartition-20),(hPartition-30))
 
             # self.volts[i].pos=(x_loc,y_loc)
             # self.volts[i].text=str(val)
 
             if(val<2.5):
-                self.cells[i].bgcolor = red
-            elif(val<4.2):
-                self.cells[i].bgcolor = green
+                self.cells[i].bgcolor = underVoltage
+            elif(val<=4.2):
+                self.cells[i].bgcolor = justRight
             else:
-                self.cells[i].bgcolor = blue
+                self.cells[i].bgcolor = overVoltage
 
 
 
 
-class FirstApp(App):
+class OlinBMSApp(App):
 
     def disable(self, instance, *args):
 
@@ -161,13 +161,13 @@ class FirstApp(App):
         instance.text = "I am disabled!"
 
     def build(self):
-        con = FloatLayout(size_hint=(.6,1))
+        con = FloatLayout(size_hint=(.7,1))
         con.add_widget(cellDisplay())        
         # return con
         g = ButtonsGalore()
 
         superBox = BoxLayout(orientation='horizontal',padding=10,spacing=10)
-        controlBox = BoxLayout(orientation='vertical',size_hint=(.4,1))
+        controlBox = BoxLayout(orientation='vertical',size_hint=(.3,1))
 
         button1 = Button(text='One')
         button2 = Button(text='Two')
@@ -191,4 +191,4 @@ class FirstApp(App):
 
 
 if __name__ == '__main__':
-    FirstApp().run()
+    OlinBMSApp().run()
