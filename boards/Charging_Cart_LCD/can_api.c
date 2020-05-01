@@ -13,15 +13,19 @@ uint8_t CAN_init (uint8_t mode)
     CANGSTA |= _BV(ERRP);
 
     // Set BAUD rate
-    /* 500 kbps
+    
+
+    // 500 kbps
     CANBT1 = 0x00;
     CANBT2 = 0x04;
     CANBT3 = 0x12;
-    */
+    
+    /* 
     // 250 kbps
     CANBT1 = 0x00;
     CANBT2 = 0x0C;
     CANBT3 = 0x36;
+    */
 
     // Allow all interrupts & receive interrupts
     CANGIE |= _BV(ENIT) | _BV(ENRX);
