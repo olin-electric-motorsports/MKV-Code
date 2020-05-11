@@ -4,6 +4,8 @@
     Function: Responsible for IMD and BMS LED indicators - get info from those boards
             : Start Button + corresponding LED - Final Check before entering RTD
             : Interface with LED Bars Board
+						: Interface with Brake, LV and HV leds on board
+
 
     TODO: IMPLEMENT POWER CYCLE LOGIC
 
@@ -22,9 +24,14 @@
 #include <avr/interrupt.h>
 #include <util/delay.h>
 #include "can_api.h"
-
+#include "spi.h"
 
 /*----- Macro Definitions -----*/
+
+//spi
+#define CS_DDR DDRC
+#define CS_PORT PORTC
+#define CS_PIN PC4
 
 // LEDs
 #define DEBUG_LED1                         PB5
@@ -100,13 +107,13 @@
 
 /*----- Global Variables -----*/
 volatile uint8_t gFlag = 0x00;  // Global Flag
+volatile uint8_t gTimerFlag = 0x01; // Timer Flag
 uint8_t gSteering = 0x00;
 uint8_t gCAN_MSG[8] = {0, 0, 0, 0, 0, 0, 0, 0};  // CAN Message
 uint8_t can_recv_msg[8] = {};
 
 // Timer counters
 uint8_t gClock_prescale = 0x00;  // Used for update timer
-
 
 // Temp and Voltage Vars
 uint8_t curr_temp;      // Temp
@@ -286,6 +293,10 @@ ISR(PCINT1_vect) { //pin inturput, me telling myself something, stepping on a le
 
 ISR(TIMER0_COMPA_vect) {
 	// Only send CAN msgs every 20 cycles
+	// Timer Counter0 compare match A
+ gTimerFlag |= _BV(UPDATE_STATUS);
+ }
+
 	if(gClock_prescale > 10) {
 		gFlag |= _BV(UPDATE_STATUS);
 		gClock_prescale = 0;
@@ -414,6 +425,9 @@ int main(void){
 
 	 //LV light on while car is on
 	 	PORT_LV_LED |= _BV(LV_LED);
+		CS_DDR |= _BV(CS_PIN);
+		CS_PORT |= _BV(CS_PIN);
+		uint8_t response = 0x00;
 
 	_delay_ms(3000);
 
@@ -436,8 +450,21 @@ int main(void){
 	initTimer();                        // Initialize Timer
 	gFlag |= _BV(UPDATE_STATUS);        // Read ports
 
+SPI_init(SPI_FOSC_DIV_4, SPI_MODE_0_0 /*Todo: CHECK*/, &CS_PORT, CS_PIN);
 
 	while(1) {
+
+		if(bit_is_set(gTimerFlag,UPDATE_STATUS)) {
+			// Check Timer
+			gTimerFlag &= ~_BV(UPDATE_STATUS);
+			// message = 0x00;
+			SPI_start();
+			for (uint8_t i = 0x00; i < 0x08; i++) {
+				SPI_transfer(i, &response);
+			}
+			SPI_end();
+			// _delay_ms(5000);
+		}
 
 		if(bit_is_set(gFlag, UPDATE_STATUS)) {
 			gFlag &= ~_BV(UPDATE_STATUS);  // Clear Flag
