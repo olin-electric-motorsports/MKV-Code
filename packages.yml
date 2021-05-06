@@ -1,0 +1,41 @@
+# Install apt and pip packages necessary to build everything else.
+# You must run this playbook from THIS DIRECTORY, using this command:
+#
+#   $ ansible-playbook -K packages.yml
+#
+# You will be prompted for your sudo password.
+---
+- hosts: localhost
+  tasks:
+  - name: Install required packages used throughout the setup process
+    # You need sudo to install via apt.
+    become: yes
+    become_method: sudo
+    apt:
+      force_apt_get: yes
+      # Update apt if it's been more than an hour since the last update
+      cache_valid_time: 3600
+      pkg:
+        - gcc-avr
+        - binutils-avr
+        - gdb-avr
+        - avr-libc
+        - avrdude
+        - python3
+        - python3-pip
+  - name: Get current working directory
+    shell: pwd
+    register: working_directory
+  - name: Install Python dependencies
+    pip:
+      executable: pip3
+      # Read the requirements.txt file in this directory
+      requirements: "{{ working_directory.stdout }}/requirements.txt"
+  - name: Copy AVRDUDE configuration to home directory
+    copy:
+      src: .avrdude
+      dest: "{{ ansible_env.HOME }}"
+      # To prevent updates to .avrdude from overwriting an existing
+      # configuration, uncomment the following line.
+      #force: no
+
