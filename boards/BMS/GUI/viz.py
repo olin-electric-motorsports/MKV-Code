@@ -110,22 +110,40 @@ class Single_Cell(Label):
         self.text = str(self.voltage) 
     
     def update_figure(self):
+        cell_size_x = 80
+        cell_size_y = 100
         self.fig = InstructionGroup()
         self.fig.add(Color(self.cell_color[0],self.cell_color[1],self.cell_color[2],self.cell_color[3]))
-        self.fig.add(Rectangle(pos = (self.center_x - 100/2 + 5, self.center_y - 100/2),size=(90,calculate_height_of_cell(self.voltage))))
+        self.fig.add(Rectangle(pos = (self.center_x - 100/2 + 15, self.center_y - 100/2),size=(cell_size_x*.9,calculate_height_of_cell(self.voltage))))
         self.canvas.before.add(self.fig)
 
         self.cell = InstructionGroup()
-        self.cell.add(Rectangle(source = img,pos = (self.center_x - 100/2, self.center_y - 100/2)))
+        self.cell.add(Rectangle(source = img,pos = (self.center_x - 100/2 + 10, self.center_y - 100/2),size=(cell_size_x,cell_size_y)))
         self.canvas.before.add(self.cell)
+
+class Tag(Label):
+    def __init__(self,position,text,**kwargs):
+        """Init  Single_Cell
+        """
+        super(Tag, self).__init__(**kwargs)
+        self.font_size = '30sp'
+        self.color = [255,255,255,1]
+        self.text = text
+        self.pos_hint = {"x":position[0],"y":position[1]}
+
+    def update(self, *args):
+        """Updates label text."""
+        self.text = self.text
+
 
 class Accumulator_Storage:
     def __init__(self) -> None:
         
-        self.cell_data = segments*[series*[0]]
+        self.cell_data = [[0 for i in range(series)] for j in range(segments)]
         print(self.cell_data[0][0])
     def intake_message(self,msg):
         msg_id = int(msg.arbitration_id)
+        # print(msg_id)
         # assert CAN_id_start <= msg_id and msg_id < segments * 4, f'CAN ID {msg_id} out of range'
 
         segment = math.floor((msg_id - CAN_id_start) / 4) + 1
@@ -134,16 +152,17 @@ class Accumulator_Storage:
         cell_set = (msg_id - CAN_id_start) % 4 + 1
         assert 1 <= cell_set and cell_set <= 4
 
-        # print(f'segment:{segment} and cell_set:{cell_set}')
         unpacked_cell_voltages = unpack_BMS_CAN_message(msg.data)
 
         for i in range(4):
             self.cell_data[segment - 1][(cell_set-1)*4 + i] = unpacked_cell_voltages[i]
+        # print(f'segment:{segment} and cell_set:{cell_set}')
+        # print(unpacked_cell_voltages)
 
 
 
     def get_cell_voltage(self,seg,series):
-        return self.cell_data[seg-1][series-1]
+        return self.cell_data[seg][series]
         # return (seg + 1) / segments * 4.2 + .7
         # return random.randint(1,490)/100
         
@@ -217,18 +236,37 @@ async def can_main():
                 msg_data.append(binary_voltage & 0xff)
             # Start sending first message
             if debug_mode:
-                while True:
-                    can0.send(can.Message(arbitration_id=64,data=msg_data))
-                    print('Bouncing 50 messages...')
-                    for _ in range(24):
-                        # Wait for next message from AsyncBufferedReader
-                        msg = await reader.get_message()
-                        sort_CAN_message(msg)
-                        CAN_id = msg.arbitration_id
-                        await asyncio.sleep(0.01)
-                        CAN_id += 1
-                        msg = can.Message(arbitration_id=CAN_id,data=msg_data)
-                        can0.send(msg)
+                # while True:
+                j = 1
+                cell_voltages = [(j + i)*0.02 + 2.4 for i in range(4)]
+                j += 4
+                msg_data = []
+                for i in range(4):
+                    binary_voltage = int(cell_voltages[i] * 10e3)
+                    msg_data.append(binary_voltage >> 8)
+                    msg_data.append(binary_voltage & 0xff)
+                can0.send(can.Message(arbitration_id=64,data=msg_data))
+                
+                print('Bouncing 24 messages...')
+                for _ in range(24):
+                    # Wait for next message from AsyncBufferedReader
+                    msg = await reader.get_message()
+                    sort_CAN_message(msg)
+                    CAN_id = msg.arbitration_id
+                    CAN_id += 1
+                    await asyncio.sleep(0.05)
+
+                    cell_voltages = [(j + i)*0.02 + 2.4 for i in range(4)]
+                    j += 4
+                    msg_data = []
+                    for i in range(4):
+                        binary_voltage = int(cell_voltages[i] * 10e3)
+                        msg_data.append(binary_voltage >> 8)
+                        msg_data.append(binary_voltage & 0xff)
+
+                    msg = can.Message(arbitration_id=CAN_id,data=msg_data)
+                    can0.send(msg)
+                await asyncio.sleep(1)
             else:
                 while True:  
                     # Wait for next message from AsyncBufferedReader
@@ -266,10 +304,17 @@ class MainApp(App):
 
         # Add dynamic labels
         self.list_of_labels = []
+        # Add all cell icons
         for seg in range(segments):
             for ser in range(series):
-                self.list_of_labels.append(Single_Cell(Accumulator.get_cell_voltage,[-0.47 + ser / series,-0.4 + seg / segments],[seg,ser]))
-        
+                self.list_of_labels.append(Single_Cell(Accumulator.get_cell_voltage,[-0.37 + (ser / series)*.9,-0.4 + (seg / segments)*.9],[seg,ser]))
+
+        # Add segment labels    
+        for seg in range(1,segments+1):
+            self.list_of_labels.append(Tag([-.45,-0.4 + ((seg-1)/segments)*.9],'Segment '+str(seg)))
+
+        for ser in range(1,series+1):
+            self.list_of_labels.append(Tag([-.37 + ((ser-1)/series)*.9,0.45],'P'+str(ser)))
         # Add all labels from list of labels to the float widget
         for lbl in self.list_of_labels:
             c.add_widget(lbl)
